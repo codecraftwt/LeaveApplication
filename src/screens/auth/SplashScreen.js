@@ -29,7 +29,7 @@ export default function Splash({ navigation }) {
     // Navigate after 2 seconds
     const timeout = setTimeout(() => {
       navigation.replace(isLoggedIn ? 'Drawer' : 'Login');
-    }, 2000);
+    }, 3000);
 
     return () => clearTimeout(timeout);
   }, [isLoggedIn, navigation, fadeAnim, scaleAnim]);
