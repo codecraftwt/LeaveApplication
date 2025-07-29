@@ -9,32 +9,33 @@ export const getOfficeList = createAsyncThunk(
       const res = await api.get('get-office-accessList');
       return res.data;
     } catch (e) {
-      await handleApiFailure?.(e);
       return rejectWithValue(e.message || 'Failed to fetch office list');
     }
-  }
+  },
 );
 
 // Thunk to fetch hours report
 export const getHoursReport = createAsyncThunk(
   'officeList/getHoursReport',
-  async ({ selectedWeek, selectedOffice, financialYear }, { rejectWithValue }) => {
+  async (
+    { selectedWeek, selectedOffice, financialYear },
+    { rejectWithValue },
+  ) => {
     try {
       let url = `get-hours-reports?filter_week=${selectedWeek}`;
-      if (financialYear) url += `&financial_filter=${financialYear}`;
-      if (selectedOffice) url += `&filter_office=${selectedOffice}`;
-      
-  
-      
+      if (financialYear) {
+        url += `&financial_filter=${financialYear}`;
+      }
+      if (selectedOffice) {
+        url += `&filter_office=${selectedOffice}`;
+      }
+
+      const res = await api.get(url);
       return res.data;
     } catch (e) {
-      if (e.name !== 'AbortError') {
-        await handleApiFailure?.(e);
-        return rejectWithValue(e.message || 'Failed to fetch hours report');
-      }
-      return rejectWithValue('Request cancelled');
+      return rejectWithValue(e.message || 'Failed to fetch hours report');
     }
-  }
+  },
 );
 
 const officeListSlice = createSlice({
@@ -47,38 +48,51 @@ const officeListSlice = createSlice({
     hoursReportLoading: false,
     hoursReportError: null,
   },
-  reducers: {},
+  reducers: {
+    clearOfficeListError: (state) => {
+      state.officeListError = null;
+    },
+    clearHoursReportError: (state) => {
+      state.hoursReportError = null;
+    },
+    clearHoursReport: (state) => {
+      state.hoursReport = null;
+      state.hoursReportLoading = false;
+      state.hoursReportError = null;
+    },
+  },
   extraReducers: builder => {
     builder
+      // getOfficeList cases
       .addCase(getOfficeList.pending, state => {
         state.officeListLoading = true;
         state.officeListError = null;
       })
       .addCase(getOfficeList.fulfilled, (state, action) => {
         state.officeList = action.payload.data;
+        console.log('officeList------------>', action.payload.data);
         state.officeListLoading = false;
       })
       .addCase(getOfficeList.rejected, (state, action) => {
         state.officeListError = action.payload;
         state.officeListLoading = false;
       })
-      // getHoursReport
+      // getHoursReport cases
       .addCase(getHoursReport.pending, state => {
         state.hoursReportLoading = true;
         state.hoursReportError = null;
       })
       .addCase(getHoursReport.fulfilled, (state, action) => {
         state.hoursReport = action.payload.data;
+        console.log('hoursReport------------>', action.payload.data);
         state.hoursReportLoading = false;
       })
       .addCase(getHoursReport.rejected, (state, action) => {
-        // Only update state if not a cancellation
-        if (action.payload !== 'Request cancelled') {
-          state.hoursReportError = action.payload;
-          state.hoursReportLoading = false;
-        }
+        state.hoursReportError = action.payload;
+        state.hoursReportLoading = false;
       });
   },
 });
 
+export const { clearOfficeListError, clearHoursReportError, clearHoursReport } = officeListSlice.actions;
 export default officeListSlice.reducer;

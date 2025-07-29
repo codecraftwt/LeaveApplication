@@ -13,13 +13,14 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { p } from '../../utils/Responsive';
 import { useDispatch, useSelector } from 'react-redux';
-// import { getTodayMenu, storeDinnerCount, getTodaysSelectedDinner } from '../actions/DinnerActions'; // Import the new action
 import { useToast } from 'react-native-toast-notifications';
 import { useIsFocused } from '@react-navigation/native';
 import {
   getTodayMenu,
   getTodaysSelectedDinner,
   storeDinnerCount,
+  clearErrors,
+  clearStoreResult,
 } from '../../redux/slices/dinnerSlice';
 
 export default function Dinner() {
@@ -34,124 +35,132 @@ export default function Dinner() {
     storeDinnerError: storeError,
     todaysSelectedDinner,
     todaysSelectedDinnerLoading,
-    todaysSelectedDinnerError
+    todaysSelectedDinnerError,
+    storeDinnerResult
   } = useSelector(state => state.dinner);
 
-  // State for user selection (veg/non-veg)
-  const [veg, setVeg] = useState(false);
-  const [nonVeg, setNonVeg] = useState(false);
+  // Local UI state for immediate feedback
+  const [localSelection, setLocalSelection] = useState({
+    veg: false,
+    nonVeg: false
+  });
   const [isPastDeadline, setIsPastDeadline] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    dispatch(clearErrors());
+    dispatch(clearStoreResult());
+  }, [dispatch]);
+
+  // Initialize local state from Redux store
+  useEffect(() => {
+    if (!loading && !todaysSelectedDinnerLoading) {
+      let vegState = false;
+      let nonVegState = false;
+      
+      console.log('Updating local state from Redux data:', {
+        todaysSelectedDinner,
+        data
+      });
+      
+      // Prioritize todaysSelectedDinner if available
+      if (todaysSelectedDinner?.status && todaysSelectedDinner?.data) {
+        const mealType = todaysSelectedDinner.data.meal_type;
+        console.log('Using todaysSelectedDinner meal_type:', mealType);
+        
+        if (mealType === 'veg') {
+          vegState = true;
+        } else if (mealType === 'non_veg') {
+          nonVegState = true;
+        } else if (mealType.includes('veg') && mealType.includes('non_veg')) {
+          vegState = true;
+          nonVegState = true;
+        }
+      } 
+      // Fallback to getTodayMenu data
+      else if (data) {
+        console.log('Using getTodayMenu data for state update');
+        
+        if (data.veg !== undefined && data.non_veg !== undefined) {
+          vegState = Boolean(data.veg);
+          nonVegState = Boolean(data.non_veg);
+        } else if (data.user_selection || data.selected_meal_type || data.meal_preference) {
+          const userSelection = data.user_selection || data.selected_meal_type || data.meal_preference;
+          
+          if (typeof userSelection === 'string') {
+            if (userSelection.includes('veg') && userSelection.includes('non_veg')) {
+              vegState = true;
+              nonVegState = true;
+            } else if (userSelection.includes('veg')) {
+              vegState = true;
+            } else if (userSelection.includes('non_veg')) {
+              nonVegState = true;
+            }
+          } else if (typeof userSelection === 'object') {
+            vegState = Boolean(userSelection.veg);
+            nonVegState = Boolean(userSelection.non_veg);
+          }
+        }
+      }
+      
+      console.log('Setting local state to:', { veg: vegState, nonVeg: nonVegState });
+      
+      setLocalSelection({
+        veg: vegState,
+        nonVeg: nonVegState
+      });
+    }
+  }, [loading, todaysSelectedDinnerLoading, data, todaysSelectedDinner]);
+
+  const { veg, nonVeg } = localSelection;
 
   useEffect(() => {
     if (isFocused) {
       console.log('Dinner screen focused, fetching fresh data...');
       dispatch(getTodayMenu());
-      dispatch(getTodaysSelectedDinner()); // Fetch today's selected dinner
+      dispatch(getTodaysSelectedDinner());
     }
   }, [dispatch, isFocused]);
+
+  // Add debugging for data changes
+  useEffect(() => {
+    console.log('Dinner data updated:', {
+      todayMenu: data,
+      todaysSelectedDinner,
+      loading,
+      todaysSelectedDinnerLoading,
+      error,
+      todaysSelectedDinnerError
+    });
+  }, [data, todaysSelectedDinner, loading, todaysSelectedDinnerLoading, error, todaysSelectedDinnerError]);
+
+  // Watch for store result changes and refresh data
+  useEffect(() => {
+    if (storeDinnerResult && !storeLoading) {
+      console.log('Store result changed, refreshing data...');
+      // Refresh data after successful store operation
+      dispatch(getTodaysSelectedDinner());
+      dispatch(getTodayMenu());
+    }
+  }, [storeDinnerResult, storeLoading, dispatch]);
 
   // Check if it's past 4 PM
   useEffect(() => {
     const checkDeadline = () => {
       const now = new Date();
-      const utcHours = now.getUTCHours();
-      const utcMinutes = now.getUTCMinutes();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
       
-      // Adjust for IST (UTC+5:30)
-      const istHours = (utcHours + 5) % 24;
-      const istMinutes = (utcMinutes + 30) % 60;
-      
-      setIsPastDeadline(istHours > 16 || (istHours === 16 && istMinutes > 0));
+      // Check if it's past 4 PM (16:00)
+      const isPast = currentHour > 16 || (currentHour === 16 && currentMinute > 0);
+      setIsPastDeadline(isPast);
     };
 
-    // Check immediately
     checkDeadline();
-
-    // Check every minute
-    const interval = setInterval(checkDeadline, 60000);
-
+    const interval = setInterval(checkDeadline, 60000); // Check every minute
     return () => clearInterval(interval);
   }, []);
-
-  // Update selection based on API responses
-  useEffect(() => {
-    // Prioritize todaysSelectedDinner if available
-    if (todaysSelectedDinner?.status && todaysSelectedDinner?.data) {
-      const mealType = todaysSelectedDinner.data.meal_type;
-
-      console.log('Setting selection from todaysSelectedDinner:', mealType);
-
-      if (mealType === 'veg') {
-        setVeg(true);
-        setNonVeg(false);
-      } else if (mealType === 'non_veg') {
-        setVeg(false);
-        setNonVeg(true);
-      } else if (mealType.includes('veg') && mealType.includes('non_veg')) {
-        setVeg(true);
-        setNonVeg(true);
-      } else {
-        setVeg(false);
-        setNonVeg(false);
-      }
-    }
-    // Fallback to getTodayMenu data if todaysSelectedDinner is not available
-    else if (data?.mealType) {
-      console.log('Falling back to getTodayMenu data');
-
-      // Always use the API response values if they are explicitly provided
-      if (data.veg !== undefined && data.non_veg !== undefined) {
-        setVeg(Boolean(data.veg));
-        setNonVeg(Boolean(data.non_veg));
-        console.log('Setting selection from API response:', {
-          veg: data.veg,
-          non_veg: data.non_veg,
-        });
-      } else if (
-        data.user_selection ||
-        data.selected_meal_type ||
-        data.meal_preference
-      ) {
-        const userSelection =
-          data.user_selection ||
-          data.selected_meal_type ||
-          data.meal_preference;
-
-        if (typeof userSelection === 'string') {
-          if (
-            !userSelection ||
-            userSelection.trim() === '' ||
-            userSelection.trim() === ' '
-          ) {
-            setVeg(false);
-            setNonVeg(false);
-          } else if (
-            userSelection.includes('veg') &&
-            userSelection.includes('non_veg')
-          ) {
-            setVeg(true);
-            setNonVeg(true);
-          } else if (userSelection.includes('veg')) {
-            setVeg(true);
-            setNonVeg(false);
-          } else if (userSelection.includes('non_veg')) {
-            setVeg(false);
-            setNonVeg(true);
-          } else {
-            setVeg(false);
-            setNonVeg(false);
-          }
-        } else if (typeof userSelection === 'object') {
-          setVeg(Boolean(userSelection.veg));
-          setNonVeg(Boolean(userSelection.non_veg));
-        }
-      } else {
-        setVeg(false);
-        setNonVeg(false);
-      }
-    }
-  }, [data, todaysSelectedDinner]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -168,7 +177,6 @@ export default function Dinner() {
   }, [dispatch]);
 
   const handleVegSelection = async () => {
-    // Don't allow changes if past deadline
     if (isPastDeadline) {
       toast.show('Dinner selection deadline has passed (4 PM)', {
         type: 'warning',
@@ -177,60 +185,47 @@ export default function Dinner() {
       return;
     }
 
-    let newVeg = veg;
-    let newNonVeg = nonVeg;
+    // Calculate new state based on meal type
+    let newVeg, newNonVeg;
 
     if (data?.mealType === 'both') {
-      if (veg) {
-        newVeg = false;
-        newNonVeg = false;
-      } else {
-        newVeg = true;
-        newNonVeg = false;
-      }
+      // For both options, toggle veg and clear non-veg if veg was selected
+      newVeg = !veg;
+      newNonVeg = veg ? false : nonVeg;
     } else if (data?.mealType === 'veg') {
+      // For veg only, toggle veg and ensure non-veg is false
       newVeg = !veg;
       newNonVeg = false;
     } else {
+      // Default behavior: select veg, clear non-veg
       newVeg = true;
       newNonVeg = false;
     }
 
-    setVeg(newVeg);
-    setNonVeg(newNonVeg);
-
-    // Store the selection
     try {
-      await dispatch(storeDinnerCount({
+      const result = await dispatch(
+        storeDinnerCount({
           selection: { veg: newVeg, non_veg: newNonVeg },
           food_id: data?.id,
-        }),
-      );
-      const message = newVeg
-        ? 'Dinner data updated successfully!'
-        : 'Dinner data updated successfully!';
-      toast.show(message, {
-        type: 'success',
-        placement: 'bottom',
-      });
-
-      // Refresh selected dinner data
-      dispatch(getTodaysSelectedDinner());
+        })
+      ).unwrap();
+      
+      if (result) {
+        toast.show('Dinner preference updated successfully!', {
+          type: 'success',
+          placement: 'bottom',
+        });
+      }
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to update dinner preference';
+      const errorMessage = error || 'Failed to update dinner preference';
       toast.show(errorMessage, {
         type: 'danger',
         placement: 'bottom',
       });
-      console.log('Veg selection error:', error);
     }
   };
 
   const handleNonVegSelection = async () => {
-    // Don't allow changes if past deadline
     if (isPastDeadline) {
       toast.show('Dinner selection deadline has passed (4 PM)', {
         type: 'warning',
@@ -239,64 +234,55 @@ export default function Dinner() {
       return;
     }
 
-    let newVeg = veg;
-    let newNonVeg = nonVeg;
+    // Calculate new state based on meal type
+    let newVeg, newNonVeg;
 
     if (data?.mealType === 'both') {
-      if (nonVeg) {
-        newVeg = false;
-        newNonVeg = false;
-      } else {
-        newVeg = false;
-        newNonVeg = true;
-      }
-    } else if (data?.mealType === 'non_veg') {
-      newVeg = false;
+      // For both options, toggle non-veg and clear veg if non-veg was selected
       newNonVeg = !nonVeg;
-    } else {
+      newVeg = nonVeg ? false : veg;
+    } else if (data?.mealType === 'non_veg') {
+      // For non-veg only, toggle non-veg and ensure veg is false
+      newNonVeg = !nonVeg;
       newVeg = false;
+    } else {
+      // Default behavior: select non-veg, clear veg
       newNonVeg = true;
+      newVeg = false;
     }
 
-    setVeg(newVeg);
-    setNonVeg(newNonVeg);
-
-    // Store the selection
     try {
-      await dispatch(
-        storeDinnerCount({ veg: newVeg, non_veg: newNonVeg }, data?.id),
-      );
-      const message = newNonVeg
-        ? 'Dinner data updated successfully!'
-        : 'Dinner data updated successfully!';
-      toast.show(message, {
-        type: 'success',
-        placement: 'bottom',
-      });
-
-      // Refresh selected dinner data
-      dispatch(getTodaysSelectedDinner());
+      const result = await dispatch(
+        storeDinnerCount({
+          selection: { veg: newVeg, non_veg: newNonVeg },
+          food_id: data?.id,
+        })
+      ).unwrap();
+      
+      if (result) {
+        toast.show('Dinner preference updated successfully!', {
+          type: 'success',
+          placement: 'bottom',
+        });
+      }
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to update dinner preference';
+      const errorMessage = error || 'Failed to update dinner preference';
       toast.show(errorMessage, {
         type: 'danger',
         placement: 'bottom',
       });
-      console.log('Non Veg selection error:', error);
     }
   };
 
-  // Determine which buttons to show based on mealType
-  const showVegButton =
-    data?.mealType === 'veg' ||
-    data?.mealType === 'both' ||
+  // Determine which buttons to show based on meal type
+  const showVegButton = 
+    data?.mealType === 'veg' || 
+    data?.mealType === 'both' || 
     data?.mealType === undefined;
-  const showNonVegButton =
-    data?.mealType === 'non_veg' ||
-    data?.mealType === 'both' ||
+  
+  const showNonVegButton = 
+    data?.mealType === 'non_veg' || 
+    data?.mealType === 'both' || 
     data?.mealType === undefined;
 
   // Check if no selection is made
@@ -325,6 +311,47 @@ export default function Dinner() {
           <ActivityIndicator size="large" color="#3660f9" />
           <Text style={styles.loadingText}>Loading today's menu...</Text>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show fallback if no data is available
+  if (!data && !error && !todaysSelectedDinnerError) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
+        <View style={styles.header}>
+          <Icon
+            name="restaurant"
+            size={p(22)}
+            color="#fff"
+            style={{ marginRight: p(10) }}
+          />
+          <Text style={styles.title}>DAILY DINNER MANAGEMENT</Text>
+          <Icon
+            name="restaurant"
+            size={p(22)}
+            color="#fff"
+            style={{ marginLeft: p(10) }}
+          />
+        </View>
+        <ScrollView
+          style={styles.scrollView}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Today's Menu</Text>
+            <View style={styles.noDataContainer}>
+              <Icon name="restaurant-menu" size={p(40)} color="#ccc" />
+              <Text style={styles.noDataText}>No menu available for today</Text>
+              <Text style={styles.noDataSubtext}>
+                Please check back later or contact the admin
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -511,6 +538,7 @@ export default function Dinner() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -703,5 +731,23 @@ const styles = StyleSheet.create({
     color: '#2196f3',
     marginLeft: p(8),
     flex: 1,
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    paddingVertical: p(30),
+  },
+  noDataText: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: p(18),
+    color: '#333',
+    marginTop: p(15),
+  },
+  noDataSubtext: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: p(14),
+    color: '#666',
+    marginTop: p(5),
+    textAlign: 'center',
+    paddingHorizontal: p(20),
   },
 });

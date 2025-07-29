@@ -9,12 +9,29 @@ export const TotalHoursReportModal = ({
   selectedTeam,
   selectedOfficeTeam,
 }) => {
-  if (!overallHoursData || overallHoursData.length === 0) return null;
+  if (!modalVisible || (!overallHoursData || overallHoursData.length === 0)) {
+    return (
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={closeModal}
+        statusBarTranslucent={true}>
+        <Pressable style={styles.modalOverlay} onPress={closeModal}>
+          <View style={styles.modalContentContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Total Hours Report</Text>
+              <Text style={styles.errorText}>No data available</Text>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+    );
+  }
+
   let totalMorning = 0;
   let totalEvening = 0;
   let totalOverall = 0;
-
-  
 
   const daysOfWeek = [
     'monday',
@@ -32,15 +49,24 @@ export const TotalHoursReportModal = ({
 
     if (selectedOfficeTeam) {
       selectedOfficeTeam.forEach(teamData => {
-        morningTotal += parseFloat(teamData[`${day}_morning_hours`]) || 0;
-        eveningTotal += parseFloat(teamData[`${day}_evening_hours`]) || 0;
+        // Handle both API data structure and static data structure
+        const morningHours = teamData[`${day}_morning_hours`] || teamData[day] || 0;
+        const eveningHours = teamData[`${day}_evening_hours`] || 0;
+        
+        morningTotal += parseFloat(morningHours) || 0;
+        eveningTotal += parseFloat(eveningHours) || 0;
       });
     } else {
       overallHoursData.forEach(teamData => {
-        morningTotal += parseFloat(teamData[`${day}_morning_hours`]) || 0;
-        eveningTotal += parseFloat(teamData[`${day}_evening_hours`]) || 0;
+        // Handle both API data structure and static data structure
+        const morningHours = teamData[`${day}_morning_hours`] || teamData[day] || 0;
+        const eveningHours = teamData[`${day}_evening_hours`] || 0;
+        
+        morningTotal += parseFloat(morningHours) || 0;
+        eveningTotal += parseFloat(eveningHours) || 0;
       });
     }
+    
     totalMorning += morningTotal;
     totalEvening += eveningTotal;
     totalOverall += morningTotal + eveningTotal;
@@ -59,7 +85,7 @@ export const TotalHoursReportModal = ({
       animationType="slide"
       visible={modalVisible}
       onRequestClose={closeModal}
-      >
+      statusBarTranslucent={true}>
       <Pressable style={styles.modalOverlay} onPress={closeModal}>
         <View style={styles.modalContentContainer}>
           <View style={styles.modalContent}>
@@ -80,7 +106,7 @@ export const TotalHoursReportModal = ({
 
               {aggregatedData.map((dayObj, idx) => (
                 <View
-                  key={idx}
+                  key={`day-${idx}`}
                   style={[
                     styles.tableRow,
                     {backgroundColor: idx % 2 === 0 ? '#f1f1f1' : '#fff'},
@@ -147,6 +173,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
+  modalContent: {
+    width: '100%',
+  },
   modalTitle: {
     fontSize: p(15),
     marginBottom: p(8),
@@ -191,5 +220,11 @@ const styles = StyleSheet.create({
     color: '#000',
     flex: 1,
     fontFamily: 'Rubik-regular',
+  },
+  errorText: {
+    fontSize: p(14),
+    color: '#e74c3c',
+    textAlign: 'center',
+    marginTop: p(10),
   },
 });

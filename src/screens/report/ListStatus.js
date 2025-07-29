@@ -424,7 +424,7 @@ const ListStatus = () => {
           </View>
         </View>
       <View style={styles.main}>
-        <StatusBar barStyle="dark-content" backgroundColor="#3660f9" />
+        <StatusBar barStyle="light-content" backgroundColor="#3660f9" />
 
        
 

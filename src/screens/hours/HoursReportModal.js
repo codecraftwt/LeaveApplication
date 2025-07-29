@@ -8,48 +8,68 @@ export const HoursReportModal = ({
   overallHoursData,
   closeModal,
 }) => {
-  if (!selectedTeam) return null;
+  if (!modalVisible || !selectedTeam) return null;
+
+  // Find team details from the overall data
   const teamDetails = overallHoursData?.find(
-    team => team?.team_id === selectedTeam?.team_id,
+    team => team?.team_id === selectedTeam?.team_id || team?.id === selectedTeam?.id,
   );
 
-  if (!teamDetails) return null;
+  if (!teamDetails) {
+    return (
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={closeModal}
+        statusBarTranslucent={true}>
+        <Pressable style={styles.modalOverlay} onPress={closeModal}>
+          <View style={styles.modalContentContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Team Details</Text>
+              <Text style={styles.errorText}>No data available for this team</Text>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+    );
+  }
 
   const daysOfWeek = [
     {
       day: 'Mon',
-      morning: teamDetails?.monday_morning_hours,
-      evening: teamDetails?.monday_evening_hours,
+      morning: teamDetails?.monday_morning_hours || teamDetails?.monday || 0,
+      evening: teamDetails?.monday_evening_hours || 0,
     },
     {
       day: 'Tue',
-      morning: teamDetails?.tuesday_morning_hours,
-      evening: teamDetails?.tuesday_evening_hours,
+      morning: teamDetails?.tuesday_morning_hours || teamDetails?.tuesday || 0,
+      evening: teamDetails?.tuesday_evening_hours || 0,
     },
     {
       day: 'Wed',
-      morning: teamDetails?.wednesday_morning_hours,
-      evening: teamDetails?.wednesday_evening_hours,
+      morning: teamDetails?.wednesday_morning_hours || teamDetails?.wednesday || 0,
+      evening: teamDetails?.wednesday_evening_hours || 0,
     },
     {
       day: 'Thu',
-      morning: teamDetails?.thursday_morning_hours,
-      evening: teamDetails?.thursday_evening_hours,
+      morning: teamDetails?.thursday_morning_hours || teamDetails?.thursday || 0,
+      evening: teamDetails?.thursday_evening_hours || 0,
     },
     {
       day: 'Fri',
-      morning: teamDetails?.friday_morning_hours,
-      evening: teamDetails?.friday_evening_hours,
+      morning: teamDetails?.friday_morning_hours || teamDetails?.friday || 0,
+      evening: teamDetails?.friday_evening_hours || 0,
     },
     {
       day: 'Sat',
-      morning: teamDetails?.saturday_morning_hours,
-      evening: teamDetails?.saturday_evening_hours,
+      morning: teamDetails?.saturday_morning_hours || teamDetails?.saturday || 0,
+      evening: teamDetails?.saturday_evening_hours || 0,
     },
     {
       day: 'Sun',
-      morning: teamDetails?.sunday_morning_hours,
-      evening: teamDetails?.sunday_evening_hours,
+      morning: teamDetails?.sunday_morning_hours || teamDetails?.sunday || 0,
+      evening: teamDetails?.sunday_evening_hours || 0,
     },
   ];
 
@@ -63,8 +83,7 @@ export const HoursReportModal = ({
       animationType="slide"
       visible={modalVisible}
       onRequestClose={closeModal}
-
-      >
+      statusBarTranslucent={true}>
       <Pressable style={styles.modalOverlay} onPress={closeModal}>
         <View style={styles.modalContentContainer}>
           
@@ -93,7 +112,7 @@ export const HoursReportModal = ({
 
                 return (
                   <View
-                    key={index}
+                    key={`day-${index}`}
                     style={[
                       styles.tableRow,
                       {backgroundColor: index % 2 === 0 ? '#f1f1f1' : '#fff'},
@@ -164,6 +183,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
+  modalContent: {
+    width: '100%',
+  },
   modalTitle: {
     fontSize: p(15),
     marginBottom: p(8),
@@ -209,5 +231,11 @@ const styles = StyleSheet.create({
     color: '#000',
     flex: 1,
     fontFamily: 'Rubik-regular',
+  },
+  errorText: {
+    fontSize: p(14),
+    color: '#e74c3c',
+    textAlign: 'center',
+    marginTop: p(10),
   },
 });

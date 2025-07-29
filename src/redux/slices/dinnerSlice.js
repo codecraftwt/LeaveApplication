@@ -8,26 +8,34 @@ export const getTodayMenu = createAsyncThunk(
     try {
       const res = await api.get('get-today-menu');
       const data = res.data;
-      // Map meal_type to veg/non-veg/both
+      
+      console.log('Raw API response:', data);
+      
       let mealType;
       if (data.meal_type === '1') {
         mealType = 'veg';
       } else if (data.meal_type === '2') {
-        mealType = 'both';
-      } else if (data.meal_type === '1,2') {
+        mealType = 'non_veg';
+      } else if (data.meal_type === '1,2' || data.meal_type === '2,1') {
         mealType = 'both';
       } else {
-        mealType = 'veg';
+        mealType = 'veg'; // Default fallback
       }
-      return {
+      
+      const processedData = {
         ...data,
         mealType,
-        veg: data.veg !== undefined ? Boolean(data.veg) : false,
-        non_veg: data.non_veg !== undefined ? Boolean(data.non_veg) : false,
-        user_selection: data.user_selection || data.selected_meal_type || data.meal_preference || '',
       };
+      
+      console.log('Processed dinner data:', processedData);
+      return processedData;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch today\'s menu');
+      console.error('getTodayMenu error:', error);
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to fetch today\'s menu'
+      );
     }
   }
 );
@@ -37,8 +45,10 @@ export const storeDinnerCount = createAsyncThunk(
   'dinner/storeDinnerCount',
   async ({ selection, food_id }, { rejectWithValue }) => {
     try {
-      let mealType = '';
+      console.log('Storing dinner count with:', { selection, food_id });
       
+      let mealType = '';
+
       if (selection.veg && selection.non_veg) {
         mealType = 'veg,non_veg';
       } else if (selection.veg) {
@@ -46,22 +56,27 @@ export const storeDinnerCount = createAsyncThunk(
       } else if (selection.non_veg) {
         mealType = 'non_veg';
       }
-      
-      const res = await api.post('store-dinner-count', { 
-        meal_type: mealType, 
-        food_id 
+
+      console.log('Sending meal_type:', mealType);
+
+      const res = await api.post('store-dinner-count', {
+        meal_type: mealType,
+        food_id,
       });
+
+      console.log('Store dinner response:', res.data);
 
       return {
         ...res.data,
         user_selection: mealType,
         veg: selection.veg,
-        non_veg: selection.non_veg
+        non_veg: selection.non_veg,
       };
     } catch (error) {
+      console.error('storeDinnerCount error:', error);
       return rejectWithValue(error.response?.data?.message || error.message);
     }
-  }
+  },
 );
 
 // Get today's selected dinner
@@ -70,17 +85,23 @@ export const getTodaysSelectedDinner = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await api.get('get-todays-selected-dinner');
+      console.log('Today\'s selected dinner response:', res.data);
       return res.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch selected dinner');
+      console.error('getTodaysSelectedDinner error:', error);
+      return rejectWithValue(
+        error.response?.data?.message ||
+          error.message ||
+          'Failed to fetch selected dinner',
+      );
     }
-  }
+  },
 );
 
 const dinnerSlice = createSlice({
   name: 'dinner',
   initialState: {
-    todayMenu: null,       // Previously called 'data'
+    todayMenu: null,
     todayMenuLoading: false,
     todayMenuError: null,
     storeDinnerResult: null,
@@ -90,7 +111,18 @@ const dinnerSlice = createSlice({
     todaysSelectedDinnerLoading: false,
     todaysSelectedDinnerError: null,
   },
-  reducers: {},
+  reducers: {
+    // Add a reducer to clear errors
+    clearErrors: (state) => {
+      state.todayMenuError = null;
+      state.storeDinnerError = null;
+      state.todaysSelectedDinnerError = null;
+    },
+    // Add a reducer to reset the store result
+    clearStoreResult: (state) => {
+      state.storeDinnerResult = null;
+    },
+  },
   extraReducers: builder => {
     // getTodayMenu
     builder
@@ -99,6 +131,7 @@ const dinnerSlice = createSlice({
         state.todayMenuError = null;
       })
       .addCase(getTodayMenu.fulfilled, (state, action) => {
+        console.log('getTodayMenu payload:', action.payload);
         state.todayMenu = action.payload;
         state.todayMenuLoading = false;
       })
@@ -112,8 +145,19 @@ const dinnerSlice = createSlice({
         state.storeDinnerError = null;
       })
       .addCase(storeDinnerCount.fulfilled, (state, action) => {
+        console.log('storeDinnerCount payload:', action.payload);
         state.storeDinnerResult = action.payload;
         state.storeDinnerLoading = false;
+        
+        // Update todayMenu with the new selection if available
+        if (state.todayMenu && action.payload) {
+          state.todayMenu = {
+            ...state.todayMenu,
+            veg: action.payload.veg,
+            non_veg: action.payload.non_veg,
+            user_selection: action.payload.user_selection
+          };
+        }
       })
       .addCase(storeDinnerCount.rejected, (state, action) => {
         state.storeDinnerError = action.payload;
@@ -135,5 +179,5 @@ const dinnerSlice = createSlice({
   },
 });
 
+export const { clearErrors, clearStoreResult } = dinnerSlice.actions;
 export default dinnerSlice.reducer;
-// export { getTodayMenu, storeDinnerCount, getTodaysSelectedDinner };
