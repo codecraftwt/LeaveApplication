@@ -124,20 +124,20 @@ export default function MonthlySleep() {
       return true;
     };
 
-    BackHandler.addEventListener('hardwareBackPress', handleBackButton);
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackButton);
 
+    // Simulate loading delay; you can replace this with your actual logic
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 500);
+    }, 500); // Adjust the duration as needed
 
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackButton);
+      backHandler.remove();
       clearTimeout(timeout);
     };
   }, [navigation]);
 
   const convertArrayToHTML = item => {
-    console.log('#####################################################', item);
     if (!item) return '';
     const month = item.month;
     const year = new Date(item.applied_from_date).getFullYear();
@@ -349,7 +349,9 @@ export default function MonthlySleep() {
 
   return (
     <View style={styles.maincontainer}>
-      <Header title="Monthly Salary Slip" />
+      <Header title="Monthly Salary Slip" 
+              onBack={() => navigation.goBack()}
+/>
       <View style={styles.container}>
         {loading ? (
           <CustomLoadingIndicator />

@@ -94,7 +94,7 @@ const MyLeaves = () => {
     <View style={styles.container}>
       <LeaveInfo taken={9} pending={0.5} showViewButton={false} />
       <View style={styles.headerSection}>
-        <Text style={styles.detailsTitle}>My Leave Details</Text>
+        <Text style={styles.detailsTitle}>My Leave Details : </Text>
         <TouchableOpacity
           style={styles.applyButton}
           onPress={() => navigation.navigate('AddLeave')}
@@ -167,25 +167,27 @@ const styles = StyleSheet.create({
   },
   detailsTitle: {
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(17),
+    fontSize: p(14),
     color: '#222',
     letterSpacing: 0.2,
+    marginLeft: p(10),
   },
   applyButton: {
     backgroundColor: '#3360f9',
     borderRadius: p(8),
-    paddingVertical: p(8),
-    paddingHorizontal: p(18),
+    paddingVertical: p(4),
+    paddingHorizontal: p(16),
     shadowColor: '#3360f9',
     shadowOpacity: 0.10,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+    marginRight: p(10),
   },
   applyButtonText: {
     color: '#fff',
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(15),
+    fontSize: p(14),
     letterSpacing: 0.2,
   },
   leaveCard: {

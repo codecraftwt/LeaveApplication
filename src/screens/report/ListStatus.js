@@ -71,7 +71,6 @@ const ListStatus = () => {
 
       await dispatch(getOfficeList());
     } catch (error) {
-      console.log('Refresh Error:', error);
     } finally {
       setRefreshing(false);
     }
@@ -264,7 +263,6 @@ const ListStatus = () => {
             },
           ]}
         >
-          {/* {console.log('Item Status:', item.status)} {} */}
           {item.status.toString().trim() === '0'
             ? 'P'
             : item.status.toString().trim() === '1'

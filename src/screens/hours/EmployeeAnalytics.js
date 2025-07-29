@@ -40,6 +40,8 @@ export default function EmployeeAnalytics() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateField, setDateField] = useState(null); // 'from' or 'to'
   const [tempDate, setTempDate] = useState(new Date());
+  const [tempFromDate, setTempFromDate] = useState(fromDate);
+  const [tempToDate, setTempToDate] = useState(toDate);
 
   // Fetch analytics on focus or when date range changes
   useFocusEffect(
@@ -47,12 +49,6 @@ export default function EmployeeAnalytics() {
       if (user?.id && fromDate && toDate) {
         dispatch(getEmpAnalytics({ empid: user.id, fromdate: fromDate, todate: toDate }));
       }
-      // Cleanup: reset filter to last 10 days when navigating away
-      return () => {
-        const { fromDate: defaultFrom, toDate: defaultTo } = getLast10DaysRange();
-        setFromDate(defaultFrom);
-        setToDate(defaultTo);
-      };
     }, [dispatch, user?.id, fromDate, toDate])
   );
 
@@ -96,6 +92,7 @@ export default function EmployeeAnalytics() {
     const [d, m, y] = str.split('-');
     return new Date(`${y}-${m}-${d}`);
   }
+  
   function formatDMY(date) {
     return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getFullYear()}`;
   }
@@ -103,31 +100,79 @@ export default function EmployeeAnalytics() {
   // Date picker logic
   const openDatePicker = (field) => {
     setDateField(field);
-    setTempDate(parseDMY(field === 'from' ? fromDate : toDate));
+    const currentDate = field === 'from' ? tempFromDate : tempToDate;
+    setTempDate(parseDMY(currentDate));
     setShowDatePicker(true);
   };
+
   const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
     if (selectedDate) {
       const formatted = formatDMY(selectedDate);
-      if (dateField === 'from') setFromDate(formatted);
-      else setToDate(formatted);
+      if (dateField === 'from') {
+        setTempFromDate(formatted);
+        if (Platform.OS === 'ios') {
+          setFromDate(formatted);
+        }
+      } else {
+        setTempToDate(formatted);
+        if (Platform.OS === 'ios') {
+          setToDate(formatted);
+        }
+      }
     }
+  };
+
+  const handleAndroidDateConfirm = () => {
+    setShowDatePicker(false);
+    if (dateField === 'from') {
+      setFromDate(tempFromDate);
+    } else {
+      setToDate(tempToDate);
+    }
+  };
+
+  const handleAndroidDateCancel = () => {
+    setShowDatePicker(false);
+    // Reset temp dates to current values
+    setTempFromDate(fromDate);
+    setTempToDate(toDate);
+  };
+
+  const openFilterModal = () => {
+    setTempFromDate(fromDate);
+    setTempToDate(toDate);
+    setIsModalVisible(true);
+  };
+
+  const applyFilter = () => {
+    setFromDate(tempFromDate);
+    setToDate(tempToDate);
+    setIsModalVisible(false);
+  };
+
+  const clearFilter = () => {
+    const { fromDate: defaultFrom, toDate: defaultTo } = getLast10DaysRange();
+    setFromDate(defaultFrom);
+    setToDate(defaultTo);
+    setTempFromDate(defaultFrom);
+    setTempToDate(defaultTo);
+    setIsModalVisible(false);
   };
 
   return (
     <View style={styles.main}>
-      
-      <View style={styles.sub}>
-        <View style={styles.filterRow}>
+      <View style={styles.filterRow}>
           <Text style={styles.filterTitle}>Last 10 Days Analytics</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity
               style={styles.filterBtn}
-              onPress={() => setIsModalVisible(true)}
+              onPress={openFilterModal}
             >
-              <Feather name="sliders" size={p(18)} color="#fff" />
-              {/* <Text style={styles.filterBtnText}>Filter</Text> */}
+              <Feather name="sliders" size={p(18)} color="#3360f9" />
             </TouchableOpacity>
             {/* Show Clear Filter button only if filter is not default */}
             {(() => {
@@ -137,11 +182,7 @@ export default function EmployeeAnalytics() {
                 return (
                   <TouchableOpacity
                     style={styles.clearBtn}
-                    onPress={() => {
-                      setFromDate(defaultFrom);
-                      setToDate(defaultTo);
-                      setIsModalVisible(false);
-                    }}
+                    onPress={clearFilter}
                   >
                     <Text style={styles.clearBtnText}>Clear Filter</Text>
                   </TouchableOpacity>
@@ -151,6 +192,8 @@ export default function EmployeeAnalytics() {
             })()}
           </View>
         </View>
+      <View style={styles.sub}>
+        
         <Text style={{textAlign: 'center', marginBottom: p(10), color: '#222', fontFamily: 'Poppins-Regular'}}>
           Analytics from {fromDate} to {toDate}
         </Text>
@@ -205,32 +248,50 @@ export default function EmployeeAnalytics() {
               <View style={styles.modalFieldRow}>
                 <Text style={styles.modalLabel}>From Date</Text>
                 <TouchableOpacity style={styles.modalInput} onPress={() => openDatePicker('from')}>
-                  <Text style={styles.modalInputText}>{fromDate}</Text>
+                  <Text style={styles.modalInputText}>{tempFromDate}</Text>
                   <Icon name="calendar" size={p(20)} color="#3660f9" />
                 </TouchableOpacity>
               </View>
               <View style={styles.modalFieldRow}>
                 <Text style={styles.modalLabel}>To Date</Text>
                 <TouchableOpacity style={styles.modalInput} onPress={() => openDatePicker('to')}>
-                  <Text style={styles.modalInputText}>{toDate}</Text>
+                  <Text style={styles.modalInputText}>{tempToDate}</Text>
                   <Icon name="calendar" size={p(20)} color="#3660f9" />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.modalBtn}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={styles.modalBtnText}>Apply Filter</Text>
-              </TouchableOpacity>
+              <View style={styles.modalButtonRow}>
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.cancelBtn]}
+                  onPress={() => setIsModalVisible(false)}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalBtn}
+                  onPress={applyFilter}
+                >
+                  <Text style={styles.modalBtnText}>Apply Filter</Text>
+                </TouchableOpacity>
+              </View>
               {showDatePicker && (
                 <DateTimePicker
                   value={tempDate}
                   mode="date"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={handleDateChange}
-                  maximumDate={dateField === 'from' ? parseDMY(toDate) : undefined}
-                  minimumDate={dateField === 'to' ? parseDMY(fromDate) : undefined}
+                  maximumDate={dateField === 'from' ? parseDMY(tempToDate) : undefined}
+                  minimumDate={dateField === 'to' ? parseDMY(tempFromDate) : undefined}
                 />
+              )}
+              {Platform.OS === 'android' && showDatePicker && (
+                <View style={styles.androidPickerButtons}>
+                  <TouchableOpacity style={styles.androidPickerBtn} onPress={handleAndroidDateCancel}>
+                    <Text style={styles.androidPickerBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.androidPickerBtn} onPress={handleAndroidDateConfirm}>
+                    <Text style={styles.androidPickerBtnText}>OK</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           </TouchableWithoutFeedback>
@@ -251,21 +312,23 @@ const styles = StyleSheet.create({
     padding: p(16),
   },
   filterRow: {
+    backgroundColor: '#3360f9',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: p(18),
-    marginTop: p(10),
+    paddingHorizontal: p(16),
+    paddingVertical: p(10),
   },
   filterTitle: {
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(18),
-    color: '#222',
+    fontSize: p(16),
+    color: '#fff',
   },
   filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3360f9',
+    backgroundColor: '#fff',
     paddingVertical: p(8),
     paddingHorizontal: p(12),
     borderRadius: p(8),
@@ -283,15 +346,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f6fa',
     borderWidth: 1,
     borderColor: '#3360f9',
-    paddingVertical: p(8),
-    paddingHorizontal: p(18),
+    paddingVertical: p(6),
+    paddingHorizontal: p(10),
     borderRadius: p(8),
   },
   clearBtnText: {
     color: '#3360f9',
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(15),
-    marginLeft: p(6),
+    fontSize: p(14),
+    // marginLeft: p(6),
   },
   cardGrid: {
     flexDirection: 'row',
@@ -380,13 +443,46 @@ const styles = StyleSheet.create({
   modalBtn: {
     backgroundColor: '#3360f9',
     borderRadius: p(10),
-    paddingVertical: p(14),
-    paddingHorizontal: p(40),
+    paddingVertical: p(15),
+    paddingHorizontal: p(10),
     marginTop: p(10),
   },
   modalBtnText: {
     color: '#fff',
     fontFamily: 'Poppins-Bold',
+    fontSize: p(14),
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: p(10),
+  },
+  cancelBtn: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: p(10),
+    paddingVertical: p(14),
+  },
+  cancelBtnText: {
+    color: '#333',
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(14),
+  },
+  androidPickerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: p(10),
+  },
+  androidPickerBtn: {
+    paddingVertical: p(10),
+    paddingHorizontal: p(20),
+    borderRadius: p(8),
+    backgroundColor: '#3360f9',
+  },
+  androidPickerBtnText: {
+    color: '#fff',
+    fontFamily: 'Poppins-SemiBold',
     fontSize: p(16),
   },
 });

@@ -19,7 +19,7 @@ const AnnualSleep = () => {
       return true;
     };
 
-    BackHandler.addEventListener('hardwareBackPress', handleBackButton);
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackButton);
 
     // Simulate loading delay; you can replace this with your actual logic
     const timeout = setTimeout(() => {
@@ -27,14 +27,17 @@ const AnnualSleep = () => {
     }, 500); // Adjust the duration as needed
 
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackButton);
+      backHandler.remove();
       clearTimeout(timeout);
     };
   }, [navigation]);
 
   return (
     <View style={styles.maincontainer}>
-      <Header title="Annual Salary Package" />
+      <Header 
+        title="Annual Salary Package" 
+        onBack={() => navigation.goBack()}
+      />
       <View style={styles.container}>
         {loading ? (
           <CustomLoadingIndicator/>

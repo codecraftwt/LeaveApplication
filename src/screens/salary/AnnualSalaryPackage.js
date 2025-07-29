@@ -627,7 +627,6 @@ const AnnualSalaryPackage = () => {
 
   const navigation = useNavigation();
   const openpackage = () => {
-    console.log('annualSalary--------------------------------->', annualSalary);
     navigation.navigate('AnnualSleep', {
       htmlContent: generatePDFHtml(annualSalary, profile),
     });
@@ -645,7 +644,6 @@ const AnnualSalaryPackage = () => {
         const result = await dispatch(
           getAnnualPackage({ empid: empId, year: yearToTry }),
         );
-        console.log('result--------------------------------->', result);
         if (result.meta.requestStatus === 'fulfilled') {
           setFetchSuccess(true);
           setRefreshing(false);

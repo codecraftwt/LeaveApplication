@@ -484,7 +484,6 @@ const SalarySlip = () => {
       slip => slip.month === item.month && slip.year === item.Year
     );
   
-    console.log('✅ Filtered Month Data:', filteredSlip);
   
     navigation.navigate('MonthlySleep', { selectedItem: filteredSlip });
   };

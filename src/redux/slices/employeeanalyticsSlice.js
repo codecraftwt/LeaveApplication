@@ -47,7 +47,6 @@ export const getEmpStatus = createAsyncThunk(
     try {
       const res = await api.get('get-team-status');
     
-      console.log(res.data);
       return res.data;
     } catch (error) {
       await handleApiFailure?.(error); // Optional: if you have this util

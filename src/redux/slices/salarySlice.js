@@ -26,21 +26,17 @@ export const getAnnualPackage = createAsyncThunk(
       const res = await api.get(`/get-annual-package/${empid}/${year}`);
       return res.data;
     } catch (error) {
-      console.log('Annual package API error:', error.response?.status, error.message);
       
       // Don't reject for 404 errors (no data found)
       if (error.response && error.response.status === 404) {
-        console.log('No annual package data found for year:', year);
         return rejectWithValue({ error: 'No data found', status: 404 });
       }
       
       // Check if it's an authentication error (401) or server error (500)
       if (error.response && (error.response.status === 401 || error.response.status === 500)) {
-        console.log('Authentication or server error:', error.response.status);
         return rejectWithValue({ error: 'Authentication failed', status: error.response.status });
       } else {
         // For other errors, return the error message
-        console.log('API call failed but not logging out:', error.response?.status, error.message);
         return rejectWithValue(
           error.response?.data?.message || error.message || 'Failed to fetch annual package'
         );

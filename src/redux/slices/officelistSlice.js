@@ -70,7 +70,7 @@ const officeListSlice = createSlice({
       })
       .addCase(getOfficeList.fulfilled, (state, action) => {
         state.officeList = action.payload.data;
-        console.log('officeList------------>', action.payload.data);
+  
         state.officeListLoading = false;
       })
       .addCase(getOfficeList.rejected, (state, action) => {
@@ -84,7 +84,7 @@ const officeListSlice = createSlice({
       })
       .addCase(getHoursReport.fulfilled, (state, action) => {
         state.hoursReport = action.payload.data;
-        console.log('hoursReport------------>', action.payload.data);
+       
         state.hoursReportLoading = false;
       })
       .addCase(getHoursReport.rejected, (state, action) => {

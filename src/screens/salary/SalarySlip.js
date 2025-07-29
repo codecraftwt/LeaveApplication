@@ -14,10 +14,8 @@ export default function SalarySlip() {
       <View
         style={{
           flex: 1,
-          paddingTop: 20,
+          paddingTop: p(20),
           backgroundColor: '#fff',
-          borderTopEndRadius: 30,
-          borderTopStartRadius: 30,
         }}>
         <Tab.Navigator
           screenOptions={{
@@ -30,18 +28,18 @@ export default function SalarySlip() {
             },
             tabBarStyle: {
               backgroundColor: '#f0f0f0',
-              borderRadius: 10,
-              margin: 10,
+              borderRadius: p(10),
+              margin: p(10),
               justifyContent: 'center',
               paddingVertical: 0,
             },
             tabBarItemStyle: {
-              borderRadius: 10,
-              margin: 2,
+              borderRadius: p(10),
+              margin: p(2),
             },
             tabBarIndicatorStyle: {
               backgroundColor: '#3660f9',
-              borderRadius: 10,
+              borderRadius: p(10),
               height: '100%',
             },
             tabBarPressColor: '#e0e0e0',

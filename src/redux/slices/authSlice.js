@@ -9,8 +9,6 @@ export const login = createAsyncThunk(
     try {
       const res = await api.post('/login', { email, password });
 
-      console.log('Response from API call --->', res.data);
-
       if (res.data?.user && res.data?.token) {
         // ✅ Store token in AsyncStorage
         await AsyncStorage.setItem('token', res.data.token);
@@ -23,7 +21,28 @@ export const login = createAsyncThunk(
         return rejectWithValue(res.data?.message || 'Login failed');
       }
     } catch (error) {
-      return rejectWithValue(error.message || 'Something went wrong');
+      // Handle different error scenarios with user-friendly messages
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message;
+        
+        switch (status) {
+          case 401:
+            return rejectWithValue('Invalid email or password. Please check your credentials and try again.');
+          case 422:
+            return rejectWithValue('Please check your email and password format.');
+          case 404:
+            return rejectWithValue('User not found. Please check your email address.');
+          case 500:
+            return rejectWithValue('Server error. Please try again later.');
+          default:
+            return rejectWithValue(message || 'Login failed. Please try again.');
+        }
+      } else if (error.request) {
+        return rejectWithValue('Network error. Please check your internet connection and try again.');
+      } else {
+        return rejectWithValue('Something went wrong. Please try again.');
+      }
     }
   },
 );

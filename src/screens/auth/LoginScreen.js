@@ -27,22 +27,43 @@ const LoginScreen = ({ navigation }) => {
   const { loading, error: reduxError, user , isLoggedIn } = useSelector(state => state.auth);
 
   const handleLogin = async () => {
-    if (email && password) {
-      setError('');
-      console.log('Email:', email);
-      console.log('Password:', password);
-      try {
-        const resultAction = await dispatch(login({ email, password }));
-        if (login.fulfilled.match(resultAction)) {
-          navigation.replace('Drawer');
-        } else {
-          setError(resultAction.payload || 'Login failed');
-        }
-      } catch (err) {
-        setError('Something went wrong');
+    // Clear previous errors
+    setError('');
+    
+    // Input validation
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+    
+    if (!password.trim()) {
+      setError('Please enter your password.');
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    
+    // Password length validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    try {
+      const resultAction = await dispatch(login({ email: email.trim(), password }));
+      if (login.fulfilled.match(resultAction)) {
+        navigation.replace('Drawer');
+      } else {
+        // The error message is now handled in the auth slice with user-friendly messages
+        setError(resultAction.payload || 'Login failed. Please try again.');
       }
-    } else {
-      setError('Please enter both email and password.');
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
     }
   };
 

@@ -89,10 +89,7 @@ export default function HoursReport() {
   const officeData2 = officeList || [];
 
   // Debug logs
-  console.log('Redux State - officeList:', officeList);
-  console.log('Redux State - hoursReport:', hoursReport);
-  console.log('Processed - overallHoursData:', overallHoursData);
-  console.log('Processed - officeData2:', officeData2);
+
 
   const officeDataa = useMemo(() => {
     return (
@@ -185,8 +182,6 @@ export default function HoursReport() {
   const groupByOffice = () => {
     if (!overallHoursData) return {};
 
-    console.log('groupByOffice - overallHoursData:', overallHoursData);
-    console.log('groupByOffice - overallHoursData.length:', overallHoursData.length);
 
     const grouped = overallHoursData.reduce((acc, team) => {
       const officeName = team.office_name;
@@ -197,7 +192,6 @@ export default function HoursReport() {
       return acc;
     }, {});
 
-    console.log('groupByOffice - result:', grouped);
     return grouped;
   };
 
@@ -239,7 +233,6 @@ export default function HoursReport() {
   };
 
   const handleTotalRowPress = officeName => {
-    console.log('Selected Office:', officeName);
     const officeTeams = groupedTeams[officeName];
 
     if (!officeTeams) {
@@ -263,9 +256,6 @@ export default function HoursReport() {
     setSelectedOfficeTeam(null);
   };
 
-  // Show loading state
-  console.log('Loading States - officeListLoading:', officeListLoading, 'hoursReportLoading:', hoursReportLoading);
-  console.log('Error States - officeListError:', officeListError, 'hoursReportError:', hoursReportError);
   
   if (officeListLoading || hoursReportLoading) {
     return (
@@ -378,7 +368,6 @@ export default function HoursReport() {
             </View>
           </View>
           {Object.keys(groupedTeams).map((officeName, index) => {
-            console.log(`Rendering office: ${officeName} with ${groupedTeams[officeName]?.length || 0} teams`);
             return (
             <View key={index} style={{marginBottom: 20}}>
               <View style={styles.reportContainer}>
@@ -666,8 +655,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: p(20),
     backgroundColor: '#ffffff',
-    borderTopLeftRadius: p(30),
-    borderTopRightRadius: p(30),
+
   },
   title: {
     fontSize: p(16),
