@@ -19,6 +19,8 @@ import Dinner from '../screens/food/Dinner';
 import AddLeave from '../screens/leave/AddLeave';
 import LeaveReason from '../screens/leave/LeaveReason';   
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import AnnualSleep from '../screens/salary/AnnualSleep';
+import MonthlySleep from '../screens/salary/MonthlySleep';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -64,6 +66,8 @@ const AppNavigator = () => (
         <Stack.Screen name="LeaveReason" component={LeaveReason} />
         <Stack.Screen name="SalarySlip" component={SalarySlip} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="AnnualSleep" component={AnnualSleep} />
+        <Stack.Screen name="MonthlySleep" component={MonthlySleep} />
     </Stack.Navigator>
 );
 

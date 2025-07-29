@@ -8,6 +8,7 @@ import { getPersistedReducer } from './persistConfig';
 import employeeAnalyticsReducer from './slices/employeeanalyticsSlice';
 import dinnerReducer from './slices/dinnerSlice';
 import officeListReducer from './slices/officelistSlice';
+import salaryReducer from './slices/salarySlice';
 
 const rootReducer = combineReducers({
   auth: getPersistedReducer('auth', authReducer),
@@ -15,7 +16,7 @@ const rootReducer = combineReducers({
   employeeAnalytics: getPersistedReducer('employeeAnalytics', employeeAnalyticsReducer),
   dinner: getPersistedReducer('dinner', dinnerReducer),
   officeList: getPersistedReducer('officeList', officeListReducer),
-
+  salary: getPersistedReducer('salary', salaryReducer), 
 
   });
 

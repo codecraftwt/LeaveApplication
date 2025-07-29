@@ -37,25 +37,29 @@ export const storeDinnerCount = createAsyncThunk(
   'dinner/storeDinnerCount',
   async ({ selection, food_id }, { rejectWithValue }) => {
     try {
-      let requestData;
+      let mealType = '';
+      
       if (selection.veg && selection.non_veg) {
-        requestData = { meal_type: 'veg,non_veg', food_id };
+        mealType = 'veg,non_veg';
       } else if (selection.veg) {
-        requestData = { meal_type: 'veg', food_id };
+        mealType = 'veg';
       } else if (selection.non_veg) {
-        requestData = { meal_type: 'non_veg', food_id };
-      } else {
-        requestData = { meal_type: ' ', food_id };
+        mealType = 'non_veg';
       }
-      const res = await api.post('store-dinner-count', requestData);
+      
+      const res = await api.post('store-dinner-count', { 
+        meal_type: mealType, 
+        food_id 
+      });
+
       return {
         ...res.data,
-        user_selection: requestData.meal_type,
+        user_selection: mealType,
         veg: selection.veg,
-        non_veg: selection.non_veg,
+        non_veg: selection.non_veg
       };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to store dinner count');
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -76,7 +80,7 @@ export const getTodaysSelectedDinner = createAsyncThunk(
 const dinnerSlice = createSlice({
   name: 'dinner',
   initialState: {
-    todayMenu: null,
+    todayMenu: null,       // Previously called 'data'
     todayMenuLoading: false,
     todayMenuError: null,
     storeDinnerResult: null,

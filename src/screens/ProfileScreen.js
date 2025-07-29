@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#E7F2FF',
     borderRadius: p(18),
     paddingVertical: p(8),
     paddingHorizontal: p(10),
@@ -163,6 +163,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: '#3660f9',
   },
   avatarWrapper: {
     borderWidth: 3,

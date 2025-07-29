@@ -58,7 +58,8 @@ export const TotalHoursReportModal = ({
       transparent={true}
       animationType="slide"
       visible={modalVisible}
-      onRequestClose={closeModal}>
+      onRequestClose={closeModal}
+      >
       <Pressable style={styles.modalOverlay} onPress={closeModal}>
         <View style={styles.modalContentContainer}>
           <View style={styles.modalContent}>

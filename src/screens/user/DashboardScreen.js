@@ -59,9 +59,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headContainer: {
-    backgroundColor: '#ff9900',
+    backgroundColor: '#fa6a00',
     paddingVertical: p(6),
-    borderRadius: p(10),
+    borderRadius: p(12),
     marginTop: p(10),
     marginHorizontal: p(13),
   },

@@ -27,15 +27,15 @@ export default function Dinner() {
   const toast = useToast();
   const isFocused = useIsFocused();
   const {
-    loading,
-    storeLoading,
-    data,
-    error,
-    storeError,
+    todayMenuLoading: loading,
+    storeDinnerLoading: storeLoading,
+    todayMenu: data,
+    todayMenuError: error,
+    storeDinnerError: storeError,
     todaysSelectedDinner,
     todaysSelectedDinnerLoading,
-    todaysSelectedDinnerError,
-  } = useSelector(state => state?.dinner);
+    todaysSelectedDinnerError
+  } = useSelector(state => state.dinner);
 
   // State for user selection (veg/non-veg)
   const [veg, setVeg] = useState(false);
@@ -55,13 +55,14 @@ export default function Dinner() {
   useEffect(() => {
     const checkDeadline = () => {
       const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-
-      // Check if it's past 4 PM (16:00)
-      const isPast =
-        currentHour > 16 || (currentHour === 16 && currentMinute > 0);
-      setIsPastDeadline(isPast);
+      const utcHours = now.getUTCHours();
+      const utcMinutes = now.getUTCMinutes();
+      
+      // Adjust for IST (UTC+5:30)
+      const istHours = (utcHours + 5) % 24;
+      const istMinutes = (utcMinutes + 30) % 60;
+      
+      setIsPastDeadline(istHours > 16 || (istHours === 16 && istMinutes > 0));
     };
 
     // Check immediately
@@ -156,11 +157,11 @@ export default function Dinner() {
     setRefreshing(true);
     try {
       await Promise.all([
-        dispatch(getTodayMenu),
-        dispatch(getTodaysSelectedDinner), // Refresh both endpoints
+        dispatch(getTodayMenu()),
+        dispatch(getTodaysSelectedDinner())
       ]);
     } catch (error) {
-      console.log('Refresh error:', error);
+      console.error('Refresh failed:', error);
     } finally {
       setRefreshing(false);
     }
@@ -200,8 +201,10 @@ export default function Dinner() {
 
     // Store the selection
     try {
-      await dispatch(
-        storeDinnerCount({ veg: newVeg, non_veg: newNonVeg }, data?.id),
+      await dispatch(storeDinnerCount({
+          selection: { veg: newVeg, non_veg: newNonVeg },
+          food_id: data?.id,
+        }),
       );
       const message = newVeg
         ? 'Dinner data updated successfully!'

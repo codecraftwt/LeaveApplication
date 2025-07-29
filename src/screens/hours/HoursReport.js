@@ -7,13 +7,15 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
-import {getHoursReport, getOfficeList} from '../../redux/slices/officelistSlice';
-import {Dropdown} from 'react-native-element-dropdown'; 
+import {Dropdown} from 'react-native-element-dropdown';
 import {p} from '../../utils/Responsive';
+// import {HoursReportModal} from './HoursReportModal';
 import {useFocusEffect} from '@react-navigation/native';
-import {TotalHoursReportModal} from './TotalHoursReportModal';
+// import {TotalHoursReportModal} from './TotalHoursReportModal';
 import {RefreshControl} from 'react-native';
+import { getHoursReport, getOfficeList } from '../../redux/slices/officelistSlice';
 import { HoursReportModal } from './HoursReportModal';
+import { TotalHoursReportModal } from './TotalHoursReportModal';
 
 const getCurrentWeek = () => {
   const date = new Date();
@@ -71,10 +73,11 @@ export default function HoursReport() {
   const isBeforeCurrentWeek = selectedWeek < currentWeek;
   const [refreshing, setRefreshing] = useState(false);
 
+  // const token = useSelector(state => state?.user?.data?.data?.token);
   const overallHoursData = useSelector(
-    state => state?.officeList?.hoursReport,
+    state => state?.hoursReport?.data?.data,
   );
-  const officeData2 = useSelector(state => state?.officeList?.officeList);
+  const officeData2 = useSelector(state => state?.officeList?.data?.data);
 
   const officeDataa = useMemo(() => {
     return (
@@ -116,19 +119,18 @@ export default function HoursReport() {
   }, []);
 
   useEffect(() => {
- 
-      dispatch(getOfficeList());
+            dispatch(getOfficeList());
     
   }, [dispatch]);
 
   useEffect(() => {
-    if (  selectedWeek !== null) {
+    if ( selectedWeek !== null) {
       dispatch(
         getHoursReport(
           selectedWeek,
           selectedOffice,
           financialYearString,
-      
+       
         ),
       );
     }
@@ -139,7 +141,7 @@ export default function HoursReport() {
     React.useCallback(() => {
       setSelectedWeek(`${stableCurrentWeek}`);
       dispatch(
-        getHoursReport(stableCurrentWeek,  financialYearString),
+        getHoursReport(stableCurrentWeek, null, financialYearString),
       );
     }, [stableCurrentWeek, dispatch, financialYearString]),
   );
@@ -148,13 +150,13 @@ export default function HoursReport() {
     setRefreshing(true);
     setSelectedWeek(`${stableCurrentWeek}`);
     dispatch(
-      getHoursReport(stableCurrentWeek, financialYearString),
+      getHoursReport(stableCurrentWeek, null, financialYearString),
     );
 
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
-  }, [stableCurrentWeek, dispatch,  financialYearString]);
+  }, [stableCurrentWeek, dispatch, financialYearString]);
 
   const groupByOffice = () => {
     if (!overallHoursData) return {};
@@ -569,13 +571,13 @@ export default function HoursReport() {
             </View>
           </TouchableOpacity>
 
-          <HoursReportModal
+            <HoursReportModal
             selectedTeam={selectedTeam}
             modalVisible={modalVisible}
             selectedWeek={selectedWeek}
             overallHoursData={overallHoursData}
             closeModal={closeModal}
-          />
+          /> 
 
           <TotalHoursReportModal
             selectedOfficeTeam={selectedOfficeTeam}
@@ -583,9 +585,8 @@ export default function HoursReport() {
             modalVisible={totalHoursModalVisible}
             overallHoursData={overallHoursData}
             closeModal={closeModal}
-          />
+          /> 
         </ScrollView>
-        
       </View>
     </View>
   );

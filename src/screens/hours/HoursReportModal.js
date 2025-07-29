@@ -62,9 +62,12 @@ export const HoursReportModal = ({
       transparent={true}
       animationType="slide"
       visible={modalVisible}
-      onRequestClose={closeModal}>
+      onRequestClose={closeModal}
+
+      >
       <Pressable style={styles.modalOverlay} onPress={closeModal}>
         <View style={styles.modalContentContainer}>
+          
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
               {teamDetails?.team_name} Details
