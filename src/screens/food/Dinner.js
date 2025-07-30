@@ -359,163 +359,13 @@ export default function Dinner() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
-      <View style={styles.header}>
-        <Icon
-          name="restaurant"
-          size={p(22)}
-          color="#fff"
-          style={{ marginRight: p(10) }}
-        />
-        <Text style={styles.title}>DAILY DINNER MANAGEMENT</Text>
-        <Icon
-          name="restaurant"
-          size={p(22)}
-          color="#fff"
-          style={{ marginLeft: p(10) }}
-        />
-      </View>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Today's Menu</Text>
-
-          {/* Time and Deadline Status */}
-          <View style={styles.timeContainer}>
-            <View style={styles.deadlineRow}>
-              <Icon
-                name={isPastDeadline ? 'schedule' : 'check-circle'}
-                size={p(16)}
-                color={isPastDeadline ? '#f44336' : '#4caf50'}
-              />
-              <Text
-                style={[
-                  styles.deadlineText,
-                  { color: isPastDeadline ? '#f44336' : '#4caf50' },
-                ]}
-              >
-                {isPastDeadline
-                  ? 'Deadline Passed (4 PM)'
-                  : 'Deadline: 4:00 PM'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.menuBox}>
-            <Icon
-              name="format-quote"
-              size={p(24)}
-              color="#3660f9"
-              style={{ marginRight: p(8) }}
-            />
-            <Text style={styles.menuText}>
-              {data?.food_name ||
-                'GOOD FOOD IS THE FOUNDATION OF GENUINE HAPPINESS.'}
-            </Text>
-          </View>
-
-          <View style={styles.optionsRow}>
-            {showVegButton && (
-              <TouchableOpacity
-                style={[
-                  styles.toggleBtn,
-                  veg ? styles.activeVeg : styles.inactive,
-                  isPastDeadline && styles.disabledButton,
-                ]}
-                onPress={handleVegSelection}
-                activeOpacity={0.8}
-                disabled={storeLoading || isPastDeadline}
-              >
-                {storeLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={veg ? '#fff' : '#43a047'}
-                  />
-                ) : (
-                  <>
-                    <Icon
-                      name="eco"
-                      size={p(22)}
-                      color={veg ? '#fff' : '#43a047'}
-                    />
-                    <Text style={[styles.toggleText, veg && styles.activeText]}>
-                      Veg
-                    </Text>
-                    <Icon
-                      name={veg ? 'check-box' : 'check-box-outline-blank'}
-                      size={p(20)}
-                      color={veg ? '#fff' : '#43a047'}
-                      style={{ marginLeft: p(8) }}
-                    />
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-            {showNonVegButton && (
-              <TouchableOpacity
-                style={[
-                  styles.toggleBtn,
-                  nonVeg ? styles.activeNonVeg : styles.inactive,
-                  isPastDeadline && styles.disabledButton,
-                ]}
-                onPress={handleNonVegSelection}
-                activeOpacity={0.8}
-                disabled={storeLoading || isPastDeadline}
-              >
-                {storeLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={nonVeg ? '#fff' : '#d84315'}
-                  />
-                ) : (
-                  <>
-                    <Icon
-                      name="set-meal"
-                      size={p(22)}
-                      color={nonVeg ? '#fff' : '#d84315'}
-                    />
-                    <Text
-                      style={[styles.toggleText, nonVeg && styles.activeText]}
-                    >
-                      Non Veg
-                    </Text>
-                    <Icon
-                      name={nonVeg ? 'check-box' : 'check-box-outline-blank'}
-                      size={p(20)}
-                      color={nonVeg ? '#fff' : '#d84315'}
-                      style={{ marginLeft: p(8) }}
-                    />
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {noSelection && !isPastDeadline && (
-            <View style={styles.noSelectionContainer}>
-              <Icon name="info" size={p(20)} color="#2196f3" />
-              <Text style={styles.noSelectionText}>
-                No dinner preference selected. Please choose your preference.
-              </Text>
-            </View>
-          )}
-
-          {isPastDeadline && (
-            <View style={styles.deadlineWarning}>
-              <Icon name="warning" size={p(20)} color="#ff9800" />
-              <Text style={styles.deadlineWarningText}>
-                Dinner selection is now closed. Your final selection has been
-                recorded.
-              </Text>
-            </View>
-          )}
-
+      
+      {/* Show only error message if there's an error */}
+      {(error || storeError || todaysSelectedDinnerError) ? (
+        <View style={styles.errorOnlyContainer}>
           {error && (
             <View style={styles.errorContainer}>
-              <Icon name="error" size={p(20)} color="#f44336" />
+              <Icon name="error" size={p(20)} color="#f44336" style={{ marginRight: p(10) }} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -534,7 +384,165 @@ export default function Dinner() {
             </View>
           )}
         </View>
-      </ScrollView>
+      ) : (
+        <>
+          <View style={styles.header}>
+            <Icon
+              name="restaurant"
+              size={p(22)}
+              color="#fff"
+              style={{ marginRight: p(10) }}
+            />
+            <Text style={styles.title}>DAILY DINNER MANAGEMENT</Text>
+            <Icon
+              name="restaurant"
+              size={p(22)}
+              color="#fff"
+              style={{ marginLeft: p(10) }}
+            />
+          </View>
+          <ScrollView
+            style={styles.scrollView}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Today's Menu</Text>
+
+              {/* Time and Deadline Status */}
+              <View style={styles.timeContainer}>
+                <View style={styles.deadlineRow}>
+                  <Icon
+                    name={isPastDeadline ? 'schedule' : 'check-circle'}
+                    size={p(16)}
+                    color={isPastDeadline ? '#f44336' : '#4caf50'}
+                  />
+                  <Text
+                    style={[
+                      styles.deadlineText,
+                      { color: isPastDeadline ? '#f44336' : '#4caf50' },
+                    ]}
+                  >
+                    {isPastDeadline
+                      ? 'Deadline Passed (4 PM)'
+                      : 'Deadline: 4:00 PM'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.menuBox}>
+                <Icon
+                  name="format-quote"
+                  size={p(24)}
+                  color="#3660f9"
+                  style={{ marginRight: p(8) }}
+                />
+                <Text style={styles.menuText}>
+                  {data?.food_name ||
+                    'GOOD FOOD IS THE FOUNDATION OF GENUINE HAPPINESS.'}
+                </Text>
+              </View>
+
+              <View style={styles.optionsRow}>
+                {showVegButton && (
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleBtn,
+                      veg ? styles.activeVeg : styles.inactive,
+                      isPastDeadline && styles.disabledButton,
+                    ]}
+                    onPress={handleVegSelection}
+                    activeOpacity={0.8}
+                    disabled={storeLoading || isPastDeadline}
+                  >
+                    {storeLoading ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={veg ? '#fff' : '#43a047'}
+                      />
+                    ) : (
+                      <>
+                        <Icon
+                          name="eco"
+                          size={p(22)}
+                          color={veg ? '#fff' : '#43a047'}
+                        />
+                        <Text style={[styles.toggleText, veg && styles.activeText]}>
+                          Veg
+                        </Text>
+                        <Icon
+                          name={veg ? 'check-box' : 'check-box-outline-blank'}
+                          size={p(20)}
+                          color={veg ? '#fff' : '#43a047'}
+                          style={{ marginLeft: p(8) }}
+                        />
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+                {showNonVegButton && (
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleBtn,
+                      nonVeg ? styles.activeNonVeg : styles.inactive,
+                      isPastDeadline && styles.disabledButton,
+                    ]}
+                    onPress={handleNonVegSelection}
+                    activeOpacity={0.8}
+                    disabled={storeLoading || isPastDeadline}
+                  >
+                    {storeLoading ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={nonVeg ? '#fff' : '#d84315'}
+                      />
+                    ) : (
+                      <>
+                        <Icon
+                          name="set-meal"
+                          size={p(22)}
+                          color={nonVeg ? '#fff' : '#d84315'}
+                        />
+                        <Text
+                          style={[styles.toggleText, nonVeg && styles.activeText]}
+                        >
+                          Non Veg
+                        </Text>
+                        <Icon
+                          name={nonVeg ? 'check-box' : 'check-box-outline-blank'}
+                          size={p(20)}
+                          color={nonVeg ? '#fff' : '#d84315'}
+                          style={{ marginLeft: p(8) }}
+                        />
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {noSelection && !isPastDeadline && (
+                <View style={styles.noSelectionContainer}>
+                  <Icon name="info" size={p(20)} color="#2196f3" />
+                  <Text style={styles.noSelectionText}>
+                    No dinner preference selected. Please choose your preference.
+                  </Text>
+                </View>
+              )}
+
+              {isPastDeadline && (
+                <View style={styles.deadlineWarning}>
+                  <Icon name="warning" size={p(20)} color="#ff9800" />
+                  <Text style={styles.deadlineWarningText}>
+                    Dinner selection is now closed. Your final selection has been
+                    recorded.
+                  </Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -654,17 +662,24 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: p(12),
+    padding: p(20),
     borderWidth: 1,
     borderColor: '#f44336',
-    borderRadius: p(10),
-    marginTop: p(20),
+    borderRadius: p(15),
+    backgroundColor: '#fff',
+    shadowColor: '#f44336',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    maxWidth: '90%',
   },
   errorText: {
     fontFamily: 'Poppins-Regular',
-    fontSize: p(15),
+    fontSize: p(14),
     color: '#f44336',
-    marginLeft: p(8),
+    marginHorizontal: p(10),
+    
   },
   timeContainer: {
     backgroundColor: '#f8f9fa',
@@ -749,5 +764,12 @@ const styles = StyleSheet.create({
     marginTop: p(5),
     textAlign: 'center',
     paddingHorizontal: p(20),
+  },
+  errorOnlyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: p(20),
+    backgroundColor: '#f8f9fa',
   },
 });

@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { p } from '../utils/Responsive';
 import Feather from 'react-native-vector-icons/Feather';
@@ -27,6 +34,7 @@ const menuItems = [
         icon: 'users',
         screen: 'All Leaves',
         iconType: 'Feather',
+        allowedRoles: [1, 3, 10, 11, 12, 13, 14],
       },
     ],
   },
@@ -45,6 +53,7 @@ const menuItems = [
         icon: 'list',
         screen: 'List Status',
         iconType: 'Feather',
+        allowedRoles: [1, 3, 10, 11, 12, 13, 14],
       },
     ],
   },
@@ -54,7 +63,12 @@ const menuItems = [
     icon: 'bar-chart-2',
     screen: 'Employee Analytics',
   },
-  { label: 'Hours Report', icon: 'clock', screen: 'Hours Report' },
+  {
+    label: 'Hours Report',
+    icon: 'clock',
+    screen: 'Hours Report',
+    allowedRoles: [1, 3, 10, 11, 12, 13, 14],
+  },
   {
     label: 'Food Court',
     icon: 'coffee',
@@ -73,6 +87,7 @@ export default function CustomDrawer(props) {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
   const userDetails = useSelector(state => state.auth.userDetails);
+  // console.log('userDetails--------------------------------->', userDetails);
 
   useEffect(() => {
     if (user?.id) {
@@ -82,6 +97,49 @@ export default function CustomDrawer(props) {
 
   const { navigation } = props;
   const [expanded, setExpanded] = useState({});
+
+  // Function to filter menu items based on user role
+  const getFilteredMenuItems = () => {
+    const userRoleId = userDetails?.role || userDetails?.user_role?.id;
+
+    return menuItems
+      .filter(item => {
+        // If no allowedRoles specified, show for all users
+        if (!item.allowedRoles) {
+          // If item has children, filter the children as well
+          if (item.children) {
+            const filteredChildren = item.children.filter(child => {
+              if (!child.allowedRoles) {
+                return true;
+              }
+              return child.allowedRoles.includes(userRoleId);
+            });
+
+            // Only show parent if it has visible children
+            return filteredChildren.length > 0;
+          }
+          return true;
+        }
+
+        // Check if user's role is in the allowed roles list
+        return item.allowedRoles.includes(userRoleId);
+      })
+      .map(item => {
+        // If item has children, filter them based on role
+        if (item.children) {
+          return {
+            ...item,
+            children: item.children.filter(child => {
+              if (!child.allowedRoles) {
+                return true;
+              }
+              return child.allowedRoles.includes(userRoleId);
+            }),
+          };
+        }
+        return item;
+      });
+  };
 
   const handleExpand = label => {
     setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
@@ -123,7 +181,7 @@ export default function CustomDrawer(props) {
           },
         },
       ],
-      { cancelable: true }
+      { cancelable: true },
     );
   };
 
@@ -139,9 +197,7 @@ export default function CustomDrawer(props) {
         </View>
         <Text style={styles.name}>
           {userDetails?.name ||
-            `${userDetails?.first_name || ''} ${
-              userDetails?.last_name || ''
-            }`}
+            `${userDetails?.first_name || ''} ${userDetails?.last_name || ''}`}
         </Text>
         <Text style={styles.role}>
           {userDetails?.user_role?.name || userDetails?.role || ''}
@@ -152,7 +208,7 @@ export default function CustomDrawer(props) {
         contentContainerStyle={{ flexGrow: 1 }}
       >
         <View style={styles.menuSection}>
-          {menuItems.map((item, idx) => {
+          {getFilteredMenuItems().map((item, idx) => {
             if (item.children) {
               const isOpen = expanded[item.label];
               return (
@@ -200,10 +256,7 @@ export default function CustomDrawer(props) {
           })}
         </View>
       </DrawerContentScrollView>
-      <TouchableOpacity
-        style={styles.logoutContainer}
-        onPress={confirmLogout}
-      >
+      <TouchableOpacity style={styles.logoutContainer} onPress={confirmLogout}>
         <Feather name="log-out" size={p(22)} color="red" />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -254,6 +307,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   menuSection: {
+    marginTop: p(-35),
     paddingHorizontal: p(18),
   },
   menuItem: {

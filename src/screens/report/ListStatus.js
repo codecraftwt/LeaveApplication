@@ -102,8 +102,8 @@ const ListStatus = () => {
   const empid = useSelector(state => state?.user?.data?.data?.user?.id);
 
   const convertDateFormat = dateString => {
-    const [year, month, day] = dateString.split('-');
-    return `${day}-${month}-${year}`;
+    const [day, month, year] = dateString.split('-');
+    return new Date(year, month - 1, day);
   };
 
   const openDatePicker = field => {
@@ -403,7 +403,13 @@ const ListStatus = () => {
   return (
     <View style={styles.container}>
        <View
-          style={{ flexDirection: 'row', alignItems: 'center', padding: 10 ,backgroundColor:'#3660f9',borderRadius:p(10) }}
+          style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+          
+            margin: p(10),
+          
+          }}
         >
           <View style={{ flex: 1 }}>
             <TextInput
@@ -447,7 +453,7 @@ const ListStatus = () => {
 
         {lastAnalaytics && (
           <Text style={styles.analyticsTitle}>
-            Latest Status of Epmployyes :
+            Latest Status of Employees :
           </Text>
         )}
 
@@ -494,7 +500,7 @@ const ListStatus = () => {
                           // style={{textAlign: 'left'}}
                         />
                       </TouchableOpacity>
-                      {showDatePicker && (
+                      {showDatePicker && dateField === 'from' && (
                         <DateTimePicker
                           value={tempDate}
                           mode="date"
@@ -502,8 +508,7 @@ const ListStatus = () => {
                             Platform.OS === 'ios' ? 'spinner' : 'default'
                           }
                           onChange={handleDateChange}
-                          maximumDate={parseDMY(toDate)}
-                          minimumDate={parseDMY(fromDate)}
+                          maximumDate={convertDateFormat(toDate)}
                         />
                       )}
                     </View>
@@ -531,7 +536,7 @@ const ListStatus = () => {
                           style={{ textAlign: 'left' }}
                         />
                       </TouchableOpacity>
-                      {showDatePicker && (
+                      {showDatePicker && dateField === 'to' && (
                         <DateTimePicker
                           value={tempDate}
                           mode="date"
@@ -539,8 +544,7 @@ const ListStatus = () => {
                             Platform.OS === 'ios' ? 'spinner' : 'default'
                           }
                           onChange={handleDateChange}
-                          maximumDate={parseDMY(fromDate)}
-                          minimumDate={parseDMY(toDate)}
+                          minimumDate={convertDateFormat(fromDate)}
                         />
                       )}
                     </View>
@@ -608,7 +612,7 @@ const ListStatus = () => {
                         style={styles.closeButton}
                         onPress={() => setSelectedEmployee(null)}
                       >
-                        <Icon name="arrow-back" size={28} color={'#fff'} />
+                        <Icon name="arrow-back" size={20} color={'#fff'} />
                       </TouchableOpacity>
                       <Text style={styles.modalHeaderText}>Work Status</Text>
                     </View>
@@ -909,10 +913,8 @@ const styles = StyleSheet.create({
   },
   main: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
     padding: p(15),
-    // borderTopLeftRadius: p(30),
-    // borderTopRightRadius: p(30),
   },
   TopContainer: {
     flexDirection: 'row',
@@ -935,23 +937,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   filter: {
-    padding: p(8),
+    padding: p(10),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: p(10),
+    borderRadius: p(12),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   header: {
     flexDirection: 'row',
     backgroundColor: '#E97C1F',
-    paddingVertical: p(10),
+    paddingVertical: p(5),
     borderRadius: p(5),
     marginBottom: p(10),
   },
   headerText: {
     flex: 1,
     fontFamily: 'Rubik-Regular',
-    color: '#fff',
+    color: '#ffffff',
     fontSize: p(14),
     textAlign: 'left',
     paddingLeft: p(10),
@@ -959,26 +966,36 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: p(7),
-    marginVertical: p(3),
-    borderRadius: p(5),
+    paddingVertical: p(4),
+    marginVertical: p(5),
+    borderRadius: p(10),
     alignItems: 'center',
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   workCard: {
     backgroundColor: '#fff',
-    borderRadius: p(15),
-    padding: p(15),
-    marginBottom: p(15),
+    borderRadius: p(20),
+    padding: p(20),
+    marginBottom: p(20),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   mainText: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-Regular',
-    color: '#000000',
+    fontSize: p(13),
+    fontFamily: 'Poppins-Medium',
+    color: '#333333',
   },
   modalContent: {
     flex: 1,
@@ -986,207 +1003,230 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: p(10),
+    paddingHorizontal: p(15),
     justifyContent: 'space-between',
-    backgroundColor: '#3660f9',
-    paddingBottom: p(5),
+    backgroundColor: '#3360f9',
+    paddingVertical: p(10),
+    borderBottomLeftRadius: p(20),
+    borderBottomRightRadius: p(20),
   },
   modalHeaderText: {
-    fontFamily: 'Montserrat-SemiBold',
+    fontFamily: 'Poppins-Bold',
     fontSize: p(18),
-    color: '#fff',
+    color: '#ffffff',
+    marginLeft: p(15),
   },
   closeButton: {
-    marginRight: p(20),
+    padding: p(8),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: p(8),
   },
   modalBody: {
     padding: p(15),
-    paddingTop: p(20),
+    paddingTop: p(15),
   },
   statusHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: p(20),
+    marginBottom: p(15),
     backgroundColor: '#fff',
-    padding: p(15),
-    borderRadius: p(15),
+    padding: p(10),
+    borderRadius: p(10),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   statusLabel: {
     fontSize: p(14),
-    fontFamily: 'Montserrat-SemiBold',
+    fontFamily: 'Poppins-Bold',
     color: '#333',
   },
   statusBadge: {
     paddingHorizontal: p(10),
-    paddingVertical: p(4),
-    borderRadius: p(20),
+    paddingVertical: p(5),
+    borderRadius: p(15),
   },
   statusBadgeText: {
     fontSize: p(12),
-    fontFamily: 'Rubik-Regular',
-    paddingHorizontal: p(4),
-    paddingVertical: p(2),
+    fontFamily: 'Poppins-SemiBold',
+    paddingHorizontal: p(5),
+    paddingVertical: p(3),
   },
   statusText: {
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
-    color: '#000000',
-    paddingVertical: p(5),
+    fontSize: p(12),
+    fontFamily: 'Poppins-SemiBold',
+    color: '#ffffff',
+    paddingVertical: p(6),
     paddingHorizontal: p(10),
-    borderRadius: p(5),
+    borderRadius: p(8),
+    minWidth: p(40),
+    textAlign: 'center',
   },
   infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: p(15),
-    padding: p(15),
-    marginBottom: p(20),
+    backgroundColor: '#E7F2FF',
+    borderRadius: p(20),
+    padding: p(20),
+    marginBottom: p(25),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#3660f9',
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: p(15),
+    marginBottom: p(20),
   },
   infoItem: {
     flex: 1,
-    marginHorizontal: p(5),
-    backgroundColor: '#e9ecef',
-    padding: p(10),
-    borderRadius: p(10),
+    marginHorizontal: p(6),
+    backgroundColor: '#f8f9fa',
+    padding: p(15),
+    borderRadius: p(15),
+    borderWidth: 0.5,
+    borderColor: '#3660f6',
   },
   infoLabel: {
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
+    fontSize: p(13),
+    fontFamily: 'Poppins-Medium',
     color: '#666',
-    marginBottom: p(5),
+    marginBottom: p(8),
   },
   infoValue: {
     fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Bold',
     color: '#333',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: p(20),
+    marginBottom: p(25),
   },
   statsCard: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: p(15),
-    padding: p(15),
-    marginHorizontal: p(5),
+    borderRadius: p(20),
+    padding: p(18),
+    marginHorizontal: p(6),
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   statsLabel: {
     fontSize: p(12),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
     color: '#666',
-    marginBottom: p(5),
+    marginBottom: p(8),
     textAlign: 'center',
   },
   statsValue: {
-    fontSize: p(18),
-    fontFamily: 'Rubik-Bold',
-    color: '#3660f9',
+    fontSize: p(20),
+    fontFamily: 'Poppins-Bold',
+    color: '#3360f9',
   },
   sectionTitle: {
-    fontSize: p(18),
-    fontFamily: 'Montserrat-SemiBold',
+    fontSize: p(16),
+    fontFamily: 'Poppins-Bold',
     color: '#333',
-    marginBottom: p(15),
+    marginBottom: p(10),
     marginTop: p(10),
+    marginLeft: p(12),
   },
   workHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: p(10),
+    marginBottom: p(15),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    paddingBottom: p(10),
+    paddingBottom: p(15),
   },
   workCategory: {
     flex: 1,
   },
   categoryLabel: {
     fontSize: p(12),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
     color: '#666',
   },
   categoryValue: {
     fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Bold',
     color: '#333',
   },
   workType: {
-    paddingHorizontal: p(12),
-    paddingVertical: p(6),
-    borderRadius: p(20),
+    paddingHorizontal: p(15),
+    paddingVertical: p(8),
+    borderRadius: p(25),
   },
   workTypeText: {
     fontSize: p(12),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-SemiBold',
   },
   clientInfo: {
-    marginBottom: p(10),
-    backgroundColor: '#dee2e6',
-    padding: p(10),
-    borderRadius: p(10),
+    marginBottom: p(15),
+    backgroundColor: '#e3f2fd',
+    padding: p(15),
+    borderRadius: p(15),
+    borderWidth: 1,
+    borderColor: '#bbdefb',
   },
   clientName: {
     fontSize: p(16),
-    fontFamily: 'Rubik-Bold',
-    color: '#3660f9',
+    fontFamily: 'Poppins-Bold',
+    color: '#1976d2',
   },
   workDetails: {
     backgroundColor: '#f8f9fa',
-    borderRadius: p(10),
-    padding: p(12),
+    borderRadius: p(15),
+    padding: p(15),
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   workDetailsLabel: {
     fontSize: p(12),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
     color: '#666',
-    marginBottom: p(5),
+    marginBottom: p(8),
   },
   workDetailsText: {
     fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Regular',
     color: '#333',
-    lineHeight: p(20),
+    lineHeight: p(22),
   },
   actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: p(15),
-    paddingVertical: p(20),
+    paddingHorizontal: p(20),
+    paddingVertical: p(25),
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
   },
   actionButton: {
     flex: 1,
-    paddingVertical: p(12),
-    borderRadius: p(8),
+    paddingVertical: p(15),
+    borderRadius: p(12),
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: p(5),
+    marginHorizontal: p(8),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   approveButton: {
     backgroundColor: '#4CAF50',
@@ -1197,7 +1237,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: '#fff',
     fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Bold',
   },
   disabledButton: {
     opacity: 0.7,
@@ -1211,157 +1251,203 @@ const styles = StyleSheet.create({
   },
   rejectModalContent: {
     backgroundColor: '#fff',
-    borderRadius: p(15),
-    padding: p(20),
+    borderRadius: p(20),
+    padding: p(25),
     width: '90%',
     maxWidth: 400,
     zIndex: 10000,
     elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 12,
   },
   rejectModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: p(20),
-    paddingBottom: p(10),
+    marginBottom: p(25),
+    paddingBottom: p(15),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   rejectModalTitle: {
-    fontSize: p(18),
-    fontFamily: 'Montserrat-SemiBold',
+    fontSize: p(20),
+    fontFamily: 'Poppins-Bold',
     color: '#333',
   },
   reasonInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: p(8),
-    padding: p(12),
+    borderWidth: 2,
+    borderColor: '#e9ecef',
+    borderRadius: p(15),
+    padding: p(15),
     fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Regular',
     color: '#333',
-    minHeight: p(100),
+    minHeight: p(120),
     textAlignVertical: 'top',
-    marginBottom: p(20),
+    marginBottom: p(25),
+    backgroundColor: '#f8f9fa',
   },
   submitButton: {
     backgroundColor: '#F44336',
-    paddingVertical: p(12),
-    borderRadius: p(8),
+    paddingVertical: p(15),
+    borderRadius: p(12),
     alignItems: 'center',
+    shadowColor: '#F44336',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   submitButtonText: {
     color: '#fff',
     fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Bold',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     alignItems: 'center',
   },
   filtermodal: {
     width: '90%',
     backgroundColor: '#fff',
-    borderRadius: p(20),
-    padding: p(20),
+    borderRadius: p(25),
+    padding: p(25),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   showDate: {
-    marginBottom: p(15),
+    marginBottom: p(20),
   },
   text: {
-    fontSize: p(20),
-    fontFamily: 'Montserrat-SemiBold',
+    fontSize: p(22),
+    fontFamily: 'Poppins-Bold',
     color: '#333',
   },
   DatePicker: {
     marginBottom: p(20),
   },
   datePicker: {
-    marginBottom: p(15),
+    marginBottom: p(20),
   },
   labelStyle: {
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
+    fontSize: p(15),
+    fontFamily: 'Poppins-SemiBold',
     color: '#333',
+    marginBottom: p(8),
   },
   date: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
-    paddingVertical: p(12),
-    paddingHorizontal: p(15),
-    borderRadius: p(10),
-    borderWidth: 1,
+    paddingVertical: p(15),
+    paddingHorizontal: p(18),
+    borderRadius: p(15),
+    borderWidth: 2,
     borderColor: '#e9ecef',
   },
   applybtn: {
-    backgroundColor: '#3660f9',
-    paddingVertical: p(15),
-    borderRadius: p(10),
+    backgroundColor: '#3360f9',
+    paddingVertical: p(18),
+    borderRadius: p(15),
     alignItems: 'center',
+    marginTop: p(10),
+    shadowColor: '#3360f9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   applytext: {
     color: '#fff',
     fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Bold',
   },
   dataContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f1f1f1',
-    borderRadius: p(8),
+    paddingHorizontal: p(15),
+    backgroundColor: '#e8f5e8',
+    borderRadius: p(15),
     marginVertical: p(10),
-    paddingVertical: p(10),
+    borderWidth: 1,
+    borderColor: '#c8e6c9',
   },
   clearFilterButton: {
-    backgroundColor: '#e74c3c',
-    borderRadius: p(5),
-    paddingVertical: p(2),
-    paddingHorizontal: p(10),
+    backgroundColor: '#ff6b6b',
+    borderRadius: p(10),
+    paddingVertical: p(8),
+    paddingHorizontal: p(18),
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#ff6b6b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   clearFilterText: {
-    fontSize: p(12),
+    fontSize: p(13),
     color: '#fff',
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-SemiBold',
   },
   analyticsTitle: {
-    fontSize: p(12),
-    marginBottom: p(15),
+    fontSize: p(13),
+    marginVertical: p(10),
     color: '#333',
-    fontFamily: 'Montserrat-SemiBold',
+    fontFamily: 'Poppins-Bold',
+    backgroundColor: '#fff',
+    padding: p(10),
+    borderRadius: p(15),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: p(30),
+    backgroundColor: '#fff',
+    borderRadius: p(20),
+    margin: p(15),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   emptyText: {
-    fontSize: 16,
-    color: 'gray',
+    fontSize: p(16),
+    color: '#666',
     textAlign: 'center',
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
   },
   searchInput: {
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#d1d5db', // light gray
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#e9ecef',
+    borderRadius: p(10),
+    paddingHorizontal: p(18),
+    paddingVertical: p(8),
     fontSize: p(14),
-    color: '#000000',
+    color: '#333333',
     marginBottom: p(8),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Regular',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
 });
