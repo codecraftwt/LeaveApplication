@@ -10,11 +10,13 @@ import {
   TextInput,
   ActivityIndicator,
   SafeAreaView,
+  Platform,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import Feather from 'react-native-vector-icons/Feather';
 import { p } from '../../utils/Responsive';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Header from '../../components/Header';
 
 export default function LeaveReason() {
   const navigation = useNavigation();
@@ -70,7 +72,20 @@ export default function LeaveReason() {
   return (
     <SafeAreaView style={styles.mainContainer}>
       <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
-      <Header title="Leave Reason" onBack={() => navigation.goBack()} />
+      {/* Custom Header for LeaveReason page with adjusted iOS padding */}
+      <View style={styles.headerContainer}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Feather name="arrow-left" size={p(22)} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Leave Reason</Text>
+          <Image
+            source={require('../../assets/walstar11.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -312,20 +327,33 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
   },
-  header: {
-    backgroundColor: '#3660f9',
-    paddingBottom: p(20),
+  // Custom header styles for LeaveReason page
+  headerContainer: {
+    backgroundColor: '#3360f9',
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? p(20) : p(18),
+    paddingBottom: p(10),
+    paddingHorizontal: p(16),
   },
-  backButton: {
-    padding: p(8),
+  backBtn: {
+    width: p(32),
+    height: p(32),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: p(20),
+    flex: 1,
     color: '#fff',
-    marginLeft: p(15),
-    fontFamily: 'Montserrat-SemiBold',
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(18),
+  },
+  logo: {
+    width: p(80),
+    height: p(36),
+    marginLeft: p(8),
   },
   card: {
     backgroundColor: '#fff',
