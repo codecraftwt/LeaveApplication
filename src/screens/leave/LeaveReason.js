@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? p(20) : p(18),
+    paddingTop: Platform.OS === 'ios' ? p(10) : p(18),
     paddingBottom: p(10),
     paddingHorizontal: p(16),
   },
@@ -358,8 +358,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     marginTop: p(0),
-    borderTopLeftRadius: p(25),
-    borderTopRightRadius: p(25),
+    // borderTopLeftRadius: p(25),
+    // borderTopRightRadius: p(25),
     padding: p(25),
     flex: 1,
     shadowColor: '#000',

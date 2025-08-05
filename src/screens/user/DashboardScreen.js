@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Text, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Alert, StatusBar, SafeAreaView, Dimensions } from 'react-native';
 import ContributionCard from '../../components/dashboard/ContributionCard';
 import MonthStats from '../../components/dashboard/MonthStats';
 import EventsList from '../../components/dashboard/EventsList';
@@ -9,6 +9,8 @@ import { getDashboard, logout, getUser } from '../../redux/slices/authSlice';
 import LeaveInfo from '../../components/dashboard/LeaveInfo';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width } = Dimensions.get('window');
 
 const DashboardScreen = () => {
   const dispatch = useDispatch();
@@ -107,22 +109,88 @@ const DashboardScreen = () => {
     return () => clearInterval(interval);
   }, [dispatch, user?.id]);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const getCurrentDate = () => {
+    const today = new Date();
+    return today.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.headContainer}>
-        <Text style={styles.headtitle}>
-          Welcome : {user?.first_name || ''} {user?.middle_name || ''}{' '}
-          {user?.last_name || ''}
-        </Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
+      
+      {/* Professional Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View style={styles.greetingContainer}>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.userName}>
+              {user?.first_name || ''} {user?.middle_name || ''} {user?.last_name || ''}
+            </Text>
+            <Text style={styles.dateText}>{getCurrentDate()}</Text>
+          </View>
+          <View style={styles.statusIndicator}>
+            <View style={styles.statusDot} />
+            <Text style={styles.statusText}>Active</Text>
+          </View>
+        </View>
+        
+        {/* Decorative Elements */}
+        <View style={styles.headerDecoration}>
+          <View style={styles.decorationCircle1} />
+          <View style={styles.decorationCircle2} />
+        </View>
       </View>
 
-      <View style={styles.mainContainer}>
-        <ContributionCard />
-        <MonthStats />
-        <LeaveInfo showViewButton={true} />
-        <EventsList />
-      </View>
-    </ScrollView>
+      {/* Main Content */}
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.mainContainer}>
+          {/* Quick Stats Section */}
+          <View style={styles.section}>
+            
+            <ContributionCard />
+          </View>
+
+          {/* Monthly Statistics */}
+          <View style={styles.section}>
+            {/* <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Monthly Statistics</Text>
+              <Text style={styles.sectionSubtitle}>Performance tracking</Text>
+            </View> */}
+            <MonthStats />
+          </View>
+
+          {/* Leave Information */}
+          <View style={styles.section}>
+           
+            <LeaveInfo showViewButton={true} />
+          </View>
+
+          {/* Events & Updates */}
+          <View style={styles.section}>
+          
+            <EventsList />
+          </View>
+
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -131,28 +199,150 @@ export default DashboardScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    backgroundColor: '#3660f9',
+    paddingTop: p(10),
+    paddingBottom: p(15),
+    paddingHorizontal: p(20),
+    borderBottomLeftRadius: p(30),
+    borderBottomRightRadius: p(30),
+    shadowColor: '#3660f9',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    zIndex: 2,
+  },
+  greetingContainer: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: p(14),
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontFamily: 'Rubik-Regular',
+    marginBottom: p(6),
+  },
+  userName: {
+    fontSize: p(18),
+    color: '#ffffff',
+    fontFamily: 'Montserrat-Bold',
+    marginBottom: p(6),
+    lineHeight: p(20),
+  },
+  dateText: {
+    fontSize: p(14),
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: 'Rubik-Regular',
+  },
+  statusIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: p(12),
+    paddingVertical: p(8),
+    borderRadius: p(25),
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  statusDot: {
+    width: p(8),
+    height: p(8),
+    borderRadius: p(4),
+    backgroundColor: '#4caf50',
+    marginRight: p(6),
+    shadowColor: '#4caf50',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statusText: {
+    fontSize: p(12),
+    color: '#ffffff',
+    fontFamily: 'Rubik-Medium',
+  },
+  headerDecoration: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0,
+    bottom: 0,
+    zIndex: 1,
+  },
+  decorationCircle1: {
+    position: 'absolute',
+    top: -p(50),
+    right: -p(30),
+    width: p(100),
+    height: p(100),
+    borderRadius: p(50),
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  decorationCircle2: {
+    position: 'absolute',
+    bottom: -p(40),
+    left: -p(20),
+    width: p(80),
+    height: p(80),
+    borderRadius: p(40),
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: p(20),
   },
   mainContainer: {
+    paddingHorizontal: p(20),
+    paddingTop: p(20),
+  },
+  section: {
+    marginBottom: p(5),
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    // alignItems: 'center',
+    // marginBottom: p(15),
+    // paddingLeft: p(4),
+  },
+  sectionTitle: {
+    fontSize: p(20),
+    fontFamily: 'Montserrat-Bold',
+    color: '#1e293b',
     flex: 1,
-    backgroundColor: '#fff',
-    marginTop: p(10),
-    borderTopRightRadius: p(30),
-    borderTopLeftRadius: p(30),
-    marginHorizontal: p(13),
   },
-  headtitle: {
+  sectionSubtitle: {
     fontSize: p(14),
-    // marginBottom: p(10),
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#fff',
-    textAlign: 'center',
+    fontFamily: 'Rubik-Regular',
+    color: '#64748b',
+    marginTop: p(2),
   },
-  headContainer: {
-    backgroundColor: '#fa6a00',
-    paddingVertical: p(6),
+  sectionBadge: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: p(8),
+    paddingVertical: p(4),
     borderRadius: p(12),
-    marginTop: p(10),
-    marginHorizontal: p(13),
+  },
+  sectionBadgeText: {
+    fontSize: p(10),
+    fontFamily: 'Rubik-Medium',
+    color: '#ffffff',
+  },
+  bottomSpacing: {
+    height: p(20),
   },
 });
