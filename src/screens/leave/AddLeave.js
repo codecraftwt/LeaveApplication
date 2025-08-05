@@ -38,7 +38,7 @@ export default function AddLeave({ navigation }) {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
   const { addLeaveLoading, addLeaveError } = useSelector(state => state.leaves);
-  
+
   const [category, setCategory] = useState(leaveCategories[0]);
   const [leaveType, setLeaveType] = useState(null);
   const [fromDate, setFromDate] = useState(null);
@@ -51,9 +51,10 @@ export default function AddLeave({ navigation }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const scrollViewRef = useRef(null);
+  const timerRef = useRef(null);
 
   // Formaconst [isSubmitting, setIsSubmitting] = useState(false);t date as YYYY-MM-DD
-  const formatDate = (date) => {
+  const formatDate = date => {
     if (!date) return '';
     const d = new Date(date);
     const year = d.getFullYear();
@@ -61,46 +62,46 @@ export default function AddLeave({ navigation }) {
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-  
+
   const handleAddLeave = () => {
     setFormError('');
-  
+
     // Validation
     if (!category?.value) {
       setFormError('Please select a leave category.');
       return;
     }
-  
+
     if (!leaveType) {
       setFormError('Please select a leave type.');
       return;
     }
-  
+
     if (!fromDate) {
       setFormError('Please select a date.');
       return;
     }
-  
+
     if (leaveType.value === 'multipleDays' && !toDate) {
       setFormError('Please select a To Date.');
       return;
     }
-  
+
     if (leaveType.value === 'multipleDays' && fromDate > toDate) {
       setFormError('From Date cannot be after To Date.');
       return;
     }
-  
+
     if (!reason.trim()) {
       setFormError('Please enter a reason.');
       return;
     }
-  
+
     if (!user?.id) {
       setFormError('User information missing.');
       return;
     }
-  
+
     // ✅ Correct formatted payload
     const payload = {
       leave_category_id: category.value,
@@ -112,13 +113,14 @@ export default function AddLeave({ navigation }) {
           : formatDate(fromDate),
       leave_description: reason.trim(),
     };
-  
+
     console.log('🚀 Submitting payload:', payload);
-  
+
+    // Set submitting flag to track the submission
+    setIsSubmitting(true);
+
     dispatch(addLeave({ userId: user.id, leaveData: payload }));
   };
-  
-
 
   const resetForm = () => {
     setCategory(leaveCategories[0]);
@@ -127,35 +129,40 @@ export default function AddLeave({ navigation }) {
     setToDate(null);
     setReason('');
     setFormError('');
-  }
-  // Handle success state
+  };
+  // Handle API response and success state
   useEffect(() => {
-    if (!addLeaveLoading && !addLeaveError && showSuccessModal) {
-      const timer = setTimeout(() => {
-        setShowSuccessModal(false);
-        resetForm();
-        navigation.goBack();
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [showSuccessModal, addLeaveLoading, addLeaveError]);
+    if (isSubmitting && !addLeaveLoading) {
+      if (addLeaveError) {
+        setFormError(addLeaveError);
+        setIsSubmitting(false);
+      } else {
+        // Success case
+        setShowSuccessModal(true);
+        setIsSubmitting(false);
 
-  // Handle API response
-  useEffect(() => {
-  if (isSubmitting && !addLeaveLoading) {
-    if (addLeaveError) {
-      setFormError(addLeaveError);
-    } else {
-      setShowSuccessModal(true);
+        // Clear any previous timer
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+
+        // Set new timer
+        timerRef.current = setTimeout(() => {
+          console.log('🔄 Auto navigating back...');
+          // Close modal and navigate back
+          setShowSuccessModal(false);
+          resetForm();
+          // Navigate to Drawer first, then to My Leaves
+          navigation.navigate('Drawer', { screen: 'My Leaves' });
+        }, 2500);
+      }
     }
-    setIsSubmitting(false); // reset flag
-  }
-}, [addLeaveLoading, addLeaveError, isSubmitting]);
+  }, [addLeaveLoading, addLeaveError, isSubmitting, navigation]);
 
   // Handle date selection
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(Platform.OS === 'ios');
-    
+
     if (selectedDate) {
       if (dateField === 'from') {
         setFromDate(selectedDate);
@@ -173,10 +180,19 @@ export default function AddLeave({ navigation }) {
     dispatch(resetAddLeaveState());
   }, [dispatch]);
 
+  // Cleanup timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       dispatch(resetAddLeaveState());
-    }, [dispatch])
+    }, [dispatch]),
   );
 
   return (
@@ -235,7 +251,9 @@ export default function AddLeave({ navigation }) {
                 activeOpacity={0.7}
               >
                 <View style={styles.radioOuter}>
-                  {leaveType?.value === type.value && <View style={styles.radioInner} />}
+                  {leaveType?.value === type.value && (
+                    <View style={styles.radioInner} />
+                  )}
                 </View>
                 <Text style={styles.radioLabel}>{type.label}</Text>
               </TouchableOpacity>
@@ -246,7 +264,7 @@ export default function AddLeave({ navigation }) {
           <Text style={[styles.label, { marginTop: p(18) }]}>
             {leaveType?.value === 'multipleDays' ? 'Dates' : 'Date'}
           </Text>
-          
+
           <View style={{ flexDirection: 'row', gap: 10 }}>
             {/* From Date */}
             <TouchableOpacity
@@ -262,7 +280,7 @@ export default function AddLeave({ navigation }) {
               </Text>
               <MaterialIcons name="date-range" size={p(20)} color="#3360f9" />
             </TouchableOpacity>
-            
+
             {/* To Date - Only show for multiple days */}
             {leaveType?.value === 'multipleDays' && (
               <TouchableOpacity
@@ -280,13 +298,13 @@ export default function AddLeave({ navigation }) {
               </TouchableOpacity>
             )}
           </View>
-          
+
           {/* Date Picker */}
           {showDatePicker && (
             <DateTimePicker
               value={
-                (dateField === 'from' && fromDate) || 
-                (dateField === 'to' && toDate) || 
+                (dateField === 'from' && fromDate) ||
+                (dateField === 'to' && toDate) ||
                 new Date()
               }
               mode="date"
@@ -309,52 +327,74 @@ export default function AddLeave({ navigation }) {
           />
 
           {/* Error Message */}
-          {(formError) && (
-            <Text style={styles.errorText}>{formError}</Text>
-          )}
+          {formError && <Text style={styles.errorText}>{formError}</Text>}
 
           {/* Buttons */}
           <View style={styles.btnRow}>
             <TouchableOpacity
               style={styles.closeBtn}
               onPress={() => navigation.goBack()}
-              disabled={addLeaveLoading}
+              disabled={addLeaveLoading || isSubmitting}
             >
               <Text style={styles.closeBtnText}>Close</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[
-                styles.addBtn, 
-                addLeaveLoading && { backgroundColor: '#85a0f9' }
-              ]} 
-              onPress={handleAddLeave} 
-              disabled={addLeaveLoading}
+                styles.addBtn,
+                (addLeaveLoading || isSubmitting) && {
+                  backgroundColor: '#85a0f9',
+                },
+              ]}
+              onPress={handleAddLeave}
+              disabled={addLeaveLoading || isSubmitting}
             >
               <Text style={styles.addBtnText}>
-                {addLeaveLoading ? 'Adding...' : 'Add'}
+                {addLeaveLoading || isSubmitting ? 'Adding...' : 'Add'}
               </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      
+
       {/* Success Modal */}
       <Modal
         visible={showSuccessModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowSuccessModal(false)}
+        onRequestClose={() => {
+          if (timerRef.current) {
+            clearTimeout(timerRef.current);
+          }
+          setShowSuccessModal(false);
+          resetForm();
+          navigation.navigate('Drawer', { screen: 'My Leaves' });
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.successDialog}>
-            <MaterialIcons 
-              name="check-circle" 
-              size={p(48)} 
-              color="#4CAF50" 
+            <MaterialIcons
+              name="check-circle"
+              size={p(48)}
+              color="#4CAF50"
               style={{ marginBottom: p(10) }}
             />
             <Text style={styles.successText}>Leave added successfully!</Text>
+            {/* <Text style={styles.successSubText}>Redirecting to My Leaves in a moment...</Text>
+      
+             <TouchableOpacity
+         style={styles.manualCloseButton}
+         onPress={() => {
+           if (timerRef.current) {
+             clearTimeout(timerRef.current);
+           }
+           setShowSuccessModal(false);
+           resetForm();
+           navigation.navigate('Drawer', { screen: 'My Leaves' });
+         }}
+       >
+        <Text style={styles.manualCloseButtonText}>Go Now</Text>
+      </TouchableOpacity> */}
           </View>
         </View>
       </Modal>
@@ -369,7 +409,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: p(18),
-    paddingBottom: p(340), 
+    paddingBottom: p(340),
   },
   label: {
     fontFamily: 'Poppins-SemiBold',

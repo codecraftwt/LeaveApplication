@@ -6,16 +6,15 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistor, store } from './src/redux/store';
-import { StyleSheet, View } from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 
-const LoadingComponent = () => (
-  <View style={styles.loadingContainer}>
-  </View>
-);
+const LoadingComponent = () => <View style={styles.loadingContainer}></View>;
 const App = () => {
   return (
     <Provider store={store}>
       <PersistGate loading={<LoadingComponent />} persistor={persistor}>
+        <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
+
         <NavigationContainer>
           <AppNavigator />
         </NavigationContainer>
@@ -30,7 +29,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1c2f87',
+    backgroundColor: '#3660f9',
   },
   loadingText: {
     color: '#fff',

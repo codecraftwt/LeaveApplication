@@ -71,7 +71,10 @@ export default function LeaveReason() {
     <SafeAreaView style={styles.mainContainer}>
       <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
       <Header title="Leave Reason" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.card}>
           {/* Employee Info */}
           <View style={styles.employeeInfo}>
@@ -304,7 +307,7 @@ export default function LeaveReason() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#3660f9',
   },
   container: {
     flexGrow: 1,
@@ -326,13 +329,13 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    marginTop: p(-20),
+    marginTop: p(0),
     borderTopLeftRadius: p(25),
     borderTopRightRadius: p(25),
     padding: p(25),
     flex: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,

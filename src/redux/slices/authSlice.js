@@ -25,21 +25,31 @@ export const login = createAsyncThunk(
       if (error.response) {
         const status = error.response.status;
         const message = error.response.data?.message;
-        
+
         switch (status) {
           case 401:
-            return rejectWithValue('Invalid email or password. Please check your credentials and try again.');
+            return rejectWithValue(
+              'Invalid email or password. Please check your credentials and try again.',
+            );
           case 422:
-            return rejectWithValue('Please check your email and password format.');
+            return rejectWithValue(
+              'Please check your email and password format.',
+            );
           case 404:
-            return rejectWithValue('User not found. Please check your email address.');
+            return rejectWithValue(
+              'User not found. Please check your email address.',
+            );
           case 500:
             return rejectWithValue('Server error. Please try again later.');
           default:
-            return rejectWithValue(message || 'Login failed. Please try again.');
+            return rejectWithValue(
+              message || 'Login failed. Please try again.',
+            );
         }
       } else if (error.request) {
-        return rejectWithValue('Network error. Please check your internet connection and try again.');
+        return rejectWithValue(
+          'Network error. Please check your internet connection and try again.',
+        );
       } else {
         return rejectWithValue('Something went wrong. Please try again.');
       }
@@ -53,13 +63,14 @@ export const getDashboard = createAsyncThunk(
     try {
       const res = await api.get(`/get-dashboard/${userId}`);
       return res.data;
-
     } catch (error) {
-     
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch dashboard');
-     
+      return rejectWithValue(
+        error.response?.data?.message ||
+          error.message ||
+          'Failed to fetch dashboard',
+      );
     }
-  }
+  },
 );
 
 // User Details Thunk
@@ -71,11 +82,14 @@ export const getUser = createAsyncThunk(
       console.log('res---------------->', res.data);
       return res.data.data; // Only return the user object
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch user details');
+      return rejectWithValue(
+        error.response?.data?.message ||
+          error.message ||
+          'Failed to fetch user details',
+      );
     }
-  }
+  },
 );
-
 
 // Initial State
 const initialState = {
@@ -113,7 +127,7 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.loading = false;
         state.isLoggedIn = true;
-        })
+      })
       .addCase(login.rejected, (state, action) => {
         state.error = action.payload;
         state.loading = false;
@@ -138,6 +152,14 @@ const authSlice = createSlice({
       })
       .addCase(getUser.fulfilled, (state, action) => {
         state.userDetails = action.payload;
+        // Also update the main user state to check for status changes
+        if (
+          action.payload &&
+          state.user &&
+          state.user.id === action.payload.id
+        ) {
+          state.user = { ...state.user, ...action.payload };
+        }
         state.userDetailsLoading = false;
       })
       .addCase(getUser.rejected, (state, action) => {

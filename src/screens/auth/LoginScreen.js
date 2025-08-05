@@ -24,30 +24,35 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const dispatch = useDispatch();
-  const { loading, error: reduxError, user , isLoggedIn } = useSelector(state => state.auth);
+  const {
+    loading,
+    error: reduxError,
+    user,
+    isLoggedIn,
+  } = useSelector(state => state.auth);
 
   const handleLogin = async () => {
     // Clear previous errors
     setError('');
-    
+
     // Input validation
     if (!email.trim()) {
       setError('Please enter your email address.');
       return;
     }
-    
+
     if (!password.trim()) {
       setError('Please enter your password.');
       return;
     }
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address.');
       return;
     }
-    
+
     // Password length validation
     if (password.length < 6) {
       setError('Password must be at least 6 characters long.');
@@ -55,7 +60,9 @@ const LoginScreen = ({ navigation }) => {
     }
 
     try {
-      const resultAction = await dispatch(login({ email: email.trim(), password }));
+      const resultAction = await dispatch(
+        login({ email: email.trim(), password }),
+      );
       if (login.fulfilled.match(resultAction)) {
         navigation.replace('Drawer');
       } else {
@@ -113,7 +120,9 @@ const LoginScreen = ({ navigation }) => {
               />
             </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            {reduxError && !error ? <Text style={styles.error}>{reduxError}</Text> : null}
+            {reduxError && !error ? (
+              <Text style={styles.error}>{reduxError}</Text>
+            ) : null}
             <TouchableOpacity
               style={styles.forgotContainer}
               onPress={() => navigation.navigate('ForgotPassword')}
@@ -121,17 +130,23 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
             <View style={styles.buttonContainer}>
-              <PrimaryButton title={loading ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={loading} />
+              <PrimaryButton
+                title={loading ? 'Logging in...' : 'Login'}
+                onPress={handleLogin}
+                disabled={loading}
+              />
             </View>
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>
                 Don't have an account?{' '}
-                <Text style={styles.registerLink} onPress={() => navigation.navigate('Register')}>
+                <Text
+                  style={styles.registerLink}
+                  onPress={() => navigation.navigate('Register')}
+                >
                   Register here
                 </Text>
               </Text>
             </View>
-         
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

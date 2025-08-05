@@ -30,8 +30,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#3360f9',
     // borderBottomLeftRadius: p(30),
     // borderBottomRightRadius: p(30),
-    paddingTop: p(15),
-    paddingBottom: p(5),
+    // paddingTop: p(10),
+    // paddingBottom: p(5),
 
   },
   headerRow: {

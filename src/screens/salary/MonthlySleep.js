@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     paddingTop: 20,
-    borderTopEndRadius: 30,
-    borderTopStartRadius: 30,
+    // borderTopEndRadius: 30,
+    // borderTopStartRadius: 30,
   },
 });

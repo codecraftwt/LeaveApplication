@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   menuSection: {
-    marginTop: p(-35),
+    // marginTop: p(-35),
     paddingHorizontal: p(18),
   },
   menuItem: {
@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#f2f2f2',
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: p(27), // Move the logout button up
   },
   logoutText: {
     color: 'red',

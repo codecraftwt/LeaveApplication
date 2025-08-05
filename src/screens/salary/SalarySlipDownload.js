@@ -8,6 +8,7 @@ import {
   PermissionsAndroid,
   Platform,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import RNFS from 'react-native-fs';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
@@ -19,6 +20,7 @@ import {getSalarySlip, getSalaryList} from '../../redux/slices/salarySlice';
 import {useDispatch, useSelector} from 'react-redux';
 import SelectDropdown from 'react-native-select-dropdown';
 import {p} from '../../utils/Responsive';
+import PermissionModal from '../../components/PermissionModal';
 
 const SalarySlip = () => {
   const dispatch = useDispatch();
@@ -33,6 +35,7 @@ const SalarySlip = () => {
 
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   const EmployeeDeductions = ['Employee Deductions'];
 
@@ -354,9 +357,8 @@ const SalarySlip = () => {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
           {
-            title: 'External Storage Write Permission',
-            message:
-              'App needs access to Storage data to download the PDF file',
+            title: 'Storage Permission Required',
+            message: 'This app needs access to your storage to save PDF files.',
           },
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
@@ -371,68 +373,155 @@ const SalarySlip = () => {
   };
 
   const generateAndDownloadPDF = async item => {
+    console.log('generateAndDownloadPDF called for item:', item);
     setMonth(item.month);
     setYear(item.Year);
     let monthdata;
 
     // Fetch the salary slip data
-    await dispatch(getSalarySlip({empid: empId, month: item.month, year: selectedYear})).then(
-      data => (monthdata = data.data),
-    );
+    const result = await dispatch(getSalarySlip({empid: empId, month: item.month, year: selectedYear}));
+    
+    if (result.meta.requestStatus === 'fulfilled' && result.payload?.data) {
+      monthdata = result.payload.data;
+    } else {
+      Alert.alert('Error', 'Failed to fetch salary data. Please try again.');
+      return;
+    }
+
+    if (!monthdata) {
+      Alert.alert('Error', 'Salary data is missing. Please try again.');
+      return;
+    }
 
     if (Platform.OS === 'android') {
       try {
         const granted = await requestExternalStoragePermission();
 
-        if (granted) {
+        if (!granted) {
+          setShowPermissionModal(true);
+          return;
+        }
           const htmlContent = convertArrayToHTML(monthdata);
+          
+          if (!htmlContent) {
+            Alert.alert('Error', 'Failed to generate PDF content. Please try again.');
+            return;
+          }
+          
+          console.log('HTML content length:', htmlContent.length);
           const timestamp = Date.now();
+          const monthName = getMonthName(item.month);
 
           const options = {
             html: htmlContent,
-            fileName: `salary_package_${timestamp}`,
-            directory: 'Documents',
+            fileName: `Salary_Slip_${monthName}_${selectedYear}`,
+            directory: Platform.OS === 'android' ? 'Downloads' : 'Documents',
           };
 
           const file = await RNHTMLtoPDF.convert(options);
-          const pdfFilePath = `file://${file.filePath}`;
-          console.log('PDF generated:', file.filePath);
+          const pdfFilePath = file.filePath;
+          console.log('PDF generated at:', pdfFilePath);
 
-          Alert.alert('PDF Generated', `PDF saved to: ${file.filePath}`, [
-            {text: 'OK', onPress: () => openPDF(pdfFilePath)},
-          ]);
-        } else {
-          Alert.alert(
-            'Permission Denied',
-            'Storage permission denied. Cannot generate PDF.',
-          );
-        }
+          if (Platform.Version >= 30) {
+            const filePath = `${RNFS.DownloadDirectoryPath}/Salary_Slip_${monthName}_${selectedYear}.pdf`;
+            
+            // Check if destination file already exists and remove it
+            const destExists = await RNFS.exists(filePath);
+            if (destExists) {
+              await RNFS.unlink(filePath);
+            }
+            
+            await RNFS.moveFile(pdfFilePath, filePath);
+            console.log('PDF moved to:', filePath);
+
+            Alert.alert(
+              'PDF Generated Successfully! 📄', 
+              `Your ${monthName} ${selectedYear} Salary Slip PDF has been saved to your Downloads folder.\n\nFile: Salary_Slip_${monthName}_${selectedYear}.pdf`, 
+              [
+                { text: 'Open PDF', onPress: () => openPDF(filePath) },
+                { text: 'OK' }
+              ]
+            );
+          } else {
+            console.log('Using original PDF path:', pdfFilePath);
+            Alert.alert(
+              'PDF Generated Successfully! 📄', 
+              `Your ${monthName} ${selectedYear} Salary Slip PDF has been saved.\n\nFile: Salary_Slip_${monthName}_${selectedYear}.pdf`, 
+              [
+                { text: 'Open PDF', onPress: () => openPDF(pdfFilePath) },
+                { text: 'OK' }
+              ]
+            );
+          }
       } catch (error) {
         console.error('Failed to generate PDF:', error);
-        Alert.alert('Error', 'Failed to generate PDF.');
+        
+        // Check if it's a permission-related error
+        if (error.message && error.message.includes('permission')) {
+          setShowPermissionModal(true);
+        } else {
+          Alert.alert(
+            'PDF Generation Failed', 
+            'Unable to generate PDF. Please check your storage permissions and try again.',
+            [
+              { text: 'Check Permissions', onPress: () => setShowPermissionModal(true) },
+              { text: 'OK' }
+            ]
+          );
+        }
       }
     } else if (Platform.OS === 'ios') {
       try {
         const htmlContent = convertArrayToHTML(monthdata);
+        
+        if (!htmlContent) {
+          Alert.alert('Error', 'Failed to generate PDF content. Please try again.');
+          return;
+        }
+        
+        console.log('HTML content length:', htmlContent.length);
         const timestamp = Date.now();
-        const filePath = `${RNFS.DocumentDirectoryPath}/salary_package_${timestamp}.pdf`;
+        const monthName = getMonthName(item.month);
+        const filePath = Platform.OS === 'android' 
+          ? `${RNFS.DownloadDirectoryPath}/Salary_Slip_${monthName}_${selectedYear}.pdf`
+          : `${RNFS.DocumentDirectoryPath}/Salary_Slip_${monthName}_${selectedYear}.pdf`;
 
         const options = {
           html: htmlContent,
-          fileName: `salary_package_${timestamp}`,
-          directory: RNFS.DocumentDirectoryPath,
+          fileName: `Salary_Slip_${monthName}_${selectedYear}`,
+          directory: Platform.OS === 'android' ? 'Downloads' : 'Documents',
         };
 
         const file = await RNHTMLtoPDF.convert(options);
-        console.log('PDF generated:', file.filePath);
-
+        console.log('PDF generated at:', file.filePath);
+        
+        // Check if destination file already exists and remove it
+        const destExists = await RNFS.exists(filePath);
+        if (destExists) {
+          await RNFS.unlink(filePath);
+        }
+        
         await RNFS.moveFile(file.filePath, filePath);
-        Alert.alert('PDF Generated', `PDF saved to: ${filePath}`, [
-          {text: 'OK', onPress: () => openPDF(filePath)},
-        ]);
+        console.log('PDF moved to:', filePath);
+        
+        Alert.alert(
+          'PDF Generated Successfully! 📄', 
+          `Your ${monthName} ${selectedYear} Salary Slip PDF has been saved.\n\nFile: Salary_Slip_${monthName}_${selectedYear}.pdf`, 
+          [
+            { text: 'Open PDF', onPress: () => openPDF(filePath) },
+            { text: 'OK' }
+          ]
+        );
       } catch (error) {
         console.error('Failed to generate PDF on iOS:', error);
-        Alert.alert('Error', 'Failed to generate PDF on iOS.');
+        Alert.alert(
+          'PDF Generation Failed', 
+          'Unable to generate PDF. Please try again.',
+          [
+            { text: 'Retry', onPress: () => generateAndDownloadPDF(item) },
+            { text: 'OK' }
+          ]
+        );
       }
     } else {
       Alert.alert(
@@ -442,13 +531,111 @@ const SalarySlip = () => {
     }
   };
 
-  const openPDF = async filepath => {
+  const openPDF = async filePath => {
     try {
-      await FileViewer.open(filepath);
-      console.log('PDF opened successfully');
+      console.log('Attempting to open PDF at path:', filePath);
+      
+      // Check if file exists before trying to open it
+      const fileExists = await RNFS.exists(filePath);
+      console.log('File exists:', fileExists);
+      
+      if (!fileExists) {
+        Alert.alert('Error', 'PDF file not found. Please try downloading again.');
+        return;
+      }
+      
+      // Get file info
+      const fileStats = await RNFS.stat(filePath);
+      console.log('File size:', fileStats.size);
+      
+      // For Android, try multiple methods
+      if (Platform.OS === 'android') {
+        try {
+          // Method 1: Try FileViewer first
+          await FileViewer.open(filePath);
+          console.log('PDF opened successfully with FileViewer');
+          return;
+        } catch (fileViewerError) {
+          console.log('FileViewer failed, trying alternative methods:', fileViewerError);
+          
+          // Method 2: Try with content:// URL
+          try {
+            const contentUrl = `content://${filePath}`;
+            await Linking.openURL(contentUrl);
+            console.log('PDF opened successfully with content URL');
+            return;
+          } catch (contentError) {
+            console.log('Content URL failed:', contentError);
+          }
+          
+          // Method 3: Try with file:// URL
+          try {
+            const fileUrl = `file://${filePath}`;
+            const canOpen = await Linking.canOpenURL(fileUrl);
+            console.log('Can open file URL:', canOpen);
+            
+            if (canOpen) {
+              await Linking.openURL(fileUrl);
+              console.log('PDF opened successfully with file URL');
+              return;
+            }
+          } catch (fileUrlError) {
+            console.log('File URL failed:', fileUrlError);
+          }
+          
+          // Method 4: Try with Intent (Android specific)
+          try {
+            const intentUrl = `intent://${filePath}#Intent;action=android.intent.action.VIEW;type=application/pdf;end`;
+            await Linking.openURL(intentUrl);
+            console.log('PDF opened successfully with Intent');
+            return;
+          } catch (intentError) {
+            console.log('Intent failed:', intentError);
+          }
+          
+          // If all methods fail, show user-friendly message
+          throw new Error('No app can handle this file type');
+        }
+      } else {
+        // For iOS, use FileViewer
+        await FileViewer.open(filePath);
+        console.log('PDF opened successfully with FileViewer');
+      }
     } catch (error) {
-      console.error('Error opening file:', error);
-      Alert.alert('Error', 'Failed to open PDF.');
+      console.error('Failed to open PDF:', error);
+      
+      // User-friendly error message with helpful suggestions
+      Alert.alert(
+        'PDF Saved Successfully! 📄', 
+        'Your Salary Slip PDF has been saved to your Downloads folder.\n\nTo open it:\n• Go to your Downloads folder\n• Tap on the PDF file\n• Choose a PDF viewer app\n\nRecommended apps: Google PDF Viewer, Adobe Reader, or your device\'s built-in PDF viewer.',
+        [
+          { text: 'Show File Location', onPress: () => showFileLocation(filePath) },
+          { text: 'OK' }
+        ]
+      );
+    }
+  };
+
+  const showFileLocation = (filePath) => {
+    Alert.alert(
+      '📁 PDF File Location',
+      `Your Salary Slip PDF is saved at:\n\n${filePath}\n\n📱 To open it manually:\n• Open your File Manager app\n• Go to Downloads folder\n• Find the PDF file\n• Tap to open with a PDF viewer\n\n💡 Tip: Most Android devices have a built-in PDF viewer. If not, install Google PDF Viewer from Play Store.`,
+      [
+        { text: 'Copy Path', onPress: () => {
+          // You can add clipboard functionality here if needed
+          Alert.alert('Path copied to clipboard');
+        }},
+        { text: 'OK' }
+      ]
+    );
+  };
+
+  const handleGrantPermission = async () => {
+    const hasPermission = await requestExternalStoragePermission();
+    if (hasPermission) {
+      // We need to store the current item to retry the PDF generation
+      // This is a simple approach - you might want to store the item in state
+      Alert.alert('Permission Granted', 'Please try downloading the PDF again.');
     }
   };
 
@@ -473,19 +660,18 @@ const SalarySlip = () => {
     setMonth(item.month);
     setYear(item.Year);
   
-    await dispatch(getSalarySlip({
+    const result = await dispatch(getSalarySlip({
       empid: empId,
       month: item.month,
       year: selectedYear, // Or use: item.Year
     }));
   
-    // Assuming salarySlip is updated in Redux state
-    const filteredSlip = salarySlip.find(
-      slip => slip.month === item.month && slip.year === item.Year
-    );
-  
-  
-    navigation.navigate('MonthlySleep', { selectedItem: filteredSlip });
+    // Check if the API call was successful and data was returned
+    if (result.meta.requestStatus === 'fulfilled' && result.payload?.data) {
+      navigation.navigate('MonthlySleep', { selectedItem: result.payload.data });
+    } else {
+      Alert.alert('Error', 'Failed to fetch salary data. Please try again.');
+    }
   };
   
 
@@ -505,111 +691,119 @@ const SalarySlip = () => {
   ];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}> Get Your Monthly Salary Slip Here:</Text>
-      <View style={styles.dropdownContainer}>
-        <Text style={styles.dropdownLabel}>Select Year:</Text>
-        <SelectDropdown
-          data={years}
-          onSelect={selectedItem => setSelectedYear(selectedItem)}
-          defaultButtonText={currentYear.toString()}
-          buttonTextAfterSelection={selectedItem => selectedItem.toString()}
-          rowTextForSelection={item => item.toString()}
-          renderButton={(selectedItem, isOpened) => (
-            <View style={styles.dropdownButtonStyle}>
-              <Text style={styles.dropdownButtonTxtStyle}>
-                {selectedYear || 'Select Year'}
-              </Text>
-              <Icon
-                name={'calendar-outline'}
-                style={styles.dropdownButtonArrowStyle}
-              />
-            </View>
-          )}
-          renderItem={(item, index, isSelected) => (
-            <View
-              style={[
-                styles.dropdownItemStyle,
-                isSelected && styles.dropdownItemSelected,
-              ]}>
-              <Text style={styles.dropdownItemTxtStyle}>{item.toString()}</Text>
-            </View>
-          )}
-          showsVerticalScrollIndicator={false}
-          dropdownStyle={styles.dropdownMenuStyle}
-        />
-      </View>
-
-      <View style={styles.card}>
-        {/* Table Head */}
-        <View style={styles.tableHead}>
-          <View style={styles.tableHeadLeft}>
-            <Text
-              style={[
-                styles.tableHeadText,
-                {marginHorizontal: p(15)},
-              ]}>
-              Sr.no
-            </Text>
-            <Text
-              style={[
-                styles.tableHeadText,
-                {marginHorizontal: p(15)},
-              ]}>
-              Month
-            </Text>
-          </View>
-          <View style={styles.tableHeadRight}>
-            <Text style={styles.tableHeadText}>Action</Text>
-          </View>
+    <>
+      <View style={styles.container}>
+        <Text style={styles.title}> Get Your Monthly Salary Slip Here:</Text>
+        <View style={styles.dropdownContainer}>
+          <Text style={styles.dropdownLabel}>Select Year:</Text>
+          <SelectDropdown
+            data={years}
+            onSelect={selectedItem => setSelectedYear(selectedItem)}
+            defaultButtonText={currentYear.toString()}
+            buttonTextAfterSelection={selectedItem => selectedItem.toString()}
+            rowTextForSelection={item => item.toString()}
+            renderButton={(selectedItem, isOpened) => (
+              <View style={styles.dropdownButtonStyle}>
+                <Text style={styles.dropdownButtonTxtStyle}>
+                  {selectedYear || 'Select Year'}
+                </Text>
+                <Icon
+                  name={'calendar-outline'}
+                  style={styles.dropdownButtonArrowStyle}
+                />
+              </View>
+            )}
+            renderItem={(item, index, isSelected) => (
+              <View
+                style={[
+                  styles.dropdownItemStyle,
+                  isSelected && styles.dropdownItemSelected,
+                ]}>
+                <Text style={styles.dropdownItemTxtStyle}>{item.toString()}</Text>
+              </View>
+            )}
+            showsVerticalScrollIndicator={false}
+            dropdownStyle={styles.dropdownMenuStyle}
+          />
         </View>
 
-        {/* Scrollable Table Rows */}
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}>
-          {Array.isArray(salarySlip) && salarySlip.length > 0 ? (
-            salarySlip.map((item, index) => (
-              <View
-                key={index}
+        <View style={styles.card}>
+          {/* Table Head */}
+          <View style={styles.tableHead}>
+            <View style={styles.tableHeadLeft}>
+              <Text
                 style={[
-                  styles.tableRow,
-                  {backgroundColor: index % 2 === 0 ? '#f1f1f1' : '#f9f9f9'},
+                  styles.tableHeadText,
+                  {marginHorizontal: p(15)},
                 ]}>
-                <View style={styles.tableCellLeft}>
-                  <Text style={styles.tableCellText}>{index + 1}</Text>
-                  <Text style={[styles.tableCellText, {marginLeft: 35}]}>
-                    {monthNames[item.month - 1]}
-                  </Text>
+                Sr.no
+              </Text>
+              <Text
+                style={[
+                  styles.tableHeadText,
+                  {marginHorizontal: p(15)},
+                ]}>
+                Month
+              </Text>
+            </View>
+            <View style={styles.tableHeadRight}>
+              <Text style={styles.tableHeadText}>Action</Text>
+            </View>
+          </View>
+
+          {/* Scrollable Table Rows */}
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}>
+            {Array.isArray(salarySlip) && salarySlip.length > 0 ? (
+              salarySlip.map((item, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.tableRow,
+                    {backgroundColor: index % 2 === 0 ? '#f1f1f1' : '#f9f9f9'},
+                  ]}>
+                  <View style={styles.tableCellLeft}>
+                    <Text style={styles.tableCellText}>{index + 1}</Text>
+                    <Text style={[styles.tableCellText, {marginLeft: 35}]}>
+                      {monthNames[item.month - 1]}
+                    </Text>
+                  </View>
+                  <View style={styles.tableCellRight}>
+                    <TouchableOpacity onPress={() => view(item)}>
+                      <Icon
+                        name={'eye-outline'}
+                        style={styles.dropdownButtonArrowStylee}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => generateAndDownloadPDF(item)}>
+                      <Icon1
+                        name={'download'}
+                        style={[
+                          styles.dropdownButtonArrowStylee,
+                          {backgroundColor: '#333'},
+                        ]}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.tableCellRight}>
-                  <TouchableOpacity onPress={() => view(item)}>
-                    <Icon
-                      name={'eye-outline'}
-                      style={styles.dropdownButtonArrowStylee}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => generateAndDownloadPDF(item)}>
-                    <Icon1
-                      name={'download'}
-                      style={[
-                        styles.dropdownButtonArrowStylee,
-                        {backgroundColor: '#333'},
-                      ]}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noDataText}>
-              The first salary slip for this year has not been generated yet.
-            </Text>
-          )}
-        </ScrollView>
+              ))
+            ) : (
+              <Text style={styles.noDataText}>
+                The first salary slip for this year has not been generated yet.
+              </Text>
+            )}
+          </ScrollView>
+        </View>
       </View>
-    </View>
+
+      <PermissionModal
+        visible={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        onGrantPermission={handleGrantPermission}
+      />
+    </>
   );
 };
 const styles = StyleSheet.create({

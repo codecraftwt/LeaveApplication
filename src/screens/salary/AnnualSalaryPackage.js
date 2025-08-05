@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import FileViewer from 'react-native-file-viewer';
@@ -17,6 +18,7 @@ import { getAnnualPackage } from '../../redux/slices/salarySlice';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/Feather';
 import RNFS from 'react-native-fs';
+import PermissionModal from '../../components/PermissionModal';
 
 import { p } from '../../utils/Responsive';
 import { ScrollView } from 'react-native-gesture-handler';
@@ -43,6 +45,7 @@ const AnnualSalaryPackage = () => {
   const userDetails = useSelector(state => state.auth.userDetails);
   const profile = userDetails;
   const [fetchSuccess, setFetchSuccess] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   useEffect(() => {
     const fetchAnnualPackage = async () => {
@@ -98,7 +101,11 @@ const AnnualSalaryPackage = () => {
   }, [dispatch, empId, year, user]);
 
   const generatePDFHtml = (annualSalary, profile) => {
-    if (!annualSalary || !profile) return '';
+    console.log('generatePDFHtml called with:', { annualSalary, profile });
+    if (!annualSalary || !profile) {
+      console.log('Missing data in generatePDFHtml');
+      return '';
+    }
     const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -535,79 +542,166 @@ const AnnualSalaryPackage = () => {
     return html;
   };
 
+  const requestStoragePermission = async () => {
+    try {
+      if (Platform.OS === 'android' && Platform.Version < 30) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Storage Permission Required',
+            message: 'This app needs access to your storage to save PDF files.',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      return true; // For iOS and Android 11+ (API 30+)
+    } catch (error) {
+      console.error('Permission request error:', error);
+      return false;
+    }
+  };
+
   const generateAndDownloadPDF = async () => {
+    console.log('generateAndDownloadPDF called');
+    console.log('Platform:', Platform.OS);
+    console.log('Platform Version:', Platform.Version);
+    console.log('annualSalary:', annualSalary);
+    console.log('profile:', profile);
+    
+    if (!annualSalary || !profile) {
+      Alert.alert('Error', 'Salary data or profile data is missing. Please try refreshing the page.');
+      return;
+    }
+    
     if (Platform.OS === 'android') {
       try {
-        // Request permissions for Android versions below API 30 (if needed)
-        if (Platform.Version < 30) {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-            PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-            {
-              title: 'Storage Permission Required',
-              message:
-                'This app needs access to your storage to save PDF files.',
-            },
-          );
-
-          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-            Alert.alert(
-              'Permission Denied',
-              'Storage permission denied. Cannot generate PDF.',
-            );
-            return;
-          }
+        // Check permissions first
+        const hasPermission = await requestStoragePermission();
+        
+        if (!hasPermission) {
+          setShowPermissionModal(true);
+          return;
         }
 
         const htmlContent = generatePDFHtml(annualSalary, profile);
+        
+        if (!htmlContent) {
+          Alert.alert('Error', 'Failed to generate PDF content. Please try again.');
+          return;
+        }
+        
+        console.log('HTML content length:', htmlContent.length);
 
         const options = {
           html: htmlContent,
           fileName: 'Annual_Salary_Package',
-          directory: 'Documents',
+          directory: Platform.OS === 'android' ? 'Downloads' : 'Documents',
         };
 
         const file = await RNHTMLtoPDF.convert(options);
         const pdfFilePath = file.filePath;
-        console.log('PDF generated:', pdfFilePath);
+        console.log('PDF generated at:', pdfFilePath);
 
         if (Platform.Version >= 30) {
-          const filePath = `${RNFS.DocumentDirectoryPath}/Annual_Salary_Package.pdf`;
+          const filePath = `${RNFS.DownloadDirectoryPath}/Annual_Salary_Package.pdf`;
+          
+          // Check if destination file already exists and remove it
+          const destExists = await RNFS.exists(filePath);
+          if (destExists) {
+            await RNFS.unlink(filePath);
+          }
+          
           await RNFS.moveFile(pdfFilePath, filePath);
+          console.log('PDF moved to:', filePath);
 
-          Alert.alert('PDF Generated', `PDF saved to: ${filePath}`, [
-            { text: 'OK', onPress: () => openPDF(filePath) },
-          ]);
+          Alert.alert(
+            'PDF Generated Successfully! 📄', 
+            `Your Annual Salary Package PDF has been saved to your Downloads folder.\n\nFile: Annual_Salary_Package.pdf`, 
+            [
+              { text: 'Open PDF', onPress: () => openPDF(filePath) },
+              { text: 'OK' }
+            ]
+          );
         } else {
-          Alert.alert('PDF Generated', `PDF saved to: ${pdfFilePath}`, [
-            { text: 'OK', onPress: () => openPDF(pdfFilePath) },
-          ]);
+          console.log('Using original PDF path:', pdfFilePath);
+          Alert.alert(
+            'PDF Generated Successfully! 📄', 
+            `Your Annual Salary Package PDF has been saved.\n\nFile: Annual_Salary_Package.pdf`, 
+            [
+              { text: 'Open PDF', onPress: () => openPDF(pdfFilePath) },
+              { text: 'OK' }
+            ]
+          );
         }
       } catch (error) {
         console.error('Failed to generate PDF:', error);
-        Alert.alert('Error', 'Failed to generate PDF.');
+        
+        // Check if it's a permission-related error
+        if (error.message && error.message.includes('permission')) {
+          setShowPermissionModal(true);
+        } else {
+          Alert.alert(
+            'PDF Generation Failed', 
+            'Unable to generate PDF. Please check your storage permissions and try again.',
+            [
+              { text: 'Check Permissions', onPress: () => setShowPermissionModal(true) },
+              { text: 'OK' }
+            ]
+          );
+        }
       }
     } else if (Platform.OS === 'ios') {
       try {
         const htmlContent = generatePDFHtml(annualSalary, profile);
+        
+        if (!htmlContent) {
+          Alert.alert('Error', 'Failed to generate PDF content. Please try again.');
+          return;
+        }
+        
+        console.log('HTML content length:', htmlContent.length);
+        
         const options = {
           html: htmlContent,
           fileName: 'Annual_Salary_Package',
-          directory: 'Documents',
+          directory: Platform.OS === 'android' ? 'Downloads' : 'Documents',
         };
 
         const file = await RNHTMLtoPDF.convert(options);
         const pdfFilePath = file.filePath;
-        console.log('PDF generated:', pdfFilePath);
-        const filePath = `${RNFS.DocumentDirectoryPath}/Annual_Salary_Package.pdf`;
+        console.log('PDF generated at:', pdfFilePath);
+        
+        const filePath = Platform.OS === 'android' 
+          ? `${RNFS.DownloadDirectoryPath}/Annual_Salary_Package.pdf`
+          : `${RNFS.DocumentDirectoryPath}/Annual_Salary_Package.pdf`;
+        
+        // Check if destination file already exists and remove it
+        const destExists = await RNFS.exists(filePath);
+        if (destExists) {
+          await RNFS.unlink(filePath);
+        }
+        
         await RNFS.moveFile(pdfFilePath, filePath);
+        console.log('PDF moved to:', filePath);
 
-        Alert.alert('PDF Generated', `PDF saved to: ${filePath}`, [
-          { text: 'OK', onPress: () => openPDF(filePath) },
-        ]);
+        Alert.alert(
+          'PDF Generated Successfully! 📄', 
+          `Your Annual Salary Package PDF has been saved.\n\nFile: Annual_Salary_Package.pdf`, 
+          [
+            { text: 'Open PDF', onPress: () => openPDF(filePath) },
+            { text: 'OK' }
+          ]
+        );
       } catch (error) {
-        console.error('Failed to generate PDF:', error);
-        Alert.alert('Error', 'Failed to generate PDF.');
+        console.error('Failed to generate PDF on iOS:', error);
+        Alert.alert(
+          'PDF Generation Failed', 
+          'Unable to generate PDF. Please try again.',
+          [
+            { text: 'Retry', onPress: () => generateAndDownloadPDF() },
+            { text: 'OK' }
+          ]
+        );
       }
     } else {
       Alert.alert(
@@ -618,10 +712,107 @@ const AnnualSalaryPackage = () => {
   };
   const openPDF = async filePath => {
     try {
-      await FileViewer.open(filePath);
+      console.log('Attempting to open PDF at path:', filePath);
+      
+      // Check if file exists before trying to open it
+      const fileExists = await RNFS.exists(filePath);
+      console.log('File exists:', fileExists);
+      
+      if (!fileExists) {
+        Alert.alert('Error', 'PDF file not found. Please try downloading again.');
+        return;
+      }
+      
+      // Get file info
+      const fileStats = await RNFS.stat(filePath);
+      console.log('File size:', fileStats.size);
+      
+      // For Android, try multiple methods
+      if (Platform.OS === 'android') {
+        try {
+          // Method 1: Try FileViewer first
+          await FileViewer.open(filePath);
+          console.log('PDF opened successfully with FileViewer');
+          return;
+        } catch (fileViewerError) {
+          console.log('FileViewer failed, trying alternative methods:', fileViewerError);
+          
+          // Method 2: Try with content:// URL
+          try {
+            const contentUrl = `content://${filePath}`;
+            await Linking.openURL(contentUrl);
+            console.log('PDF opened successfully with content URL');
+            return;
+          } catch (contentError) {
+            console.log('Content URL failed:', contentError);
+          }
+          
+          // Method 3: Try with file:// URL
+          try {
+            const fileUrl = `file://${filePath}`;
+            const canOpen = await Linking.canOpenURL(fileUrl);
+            console.log('Can open file URL:', canOpen);
+            
+            if (canOpen) {
+              await Linking.openURL(fileUrl);
+              console.log('PDF opened successfully with file URL');
+              return;
+            }
+          } catch (fileUrlError) {
+            console.log('File URL failed:', fileUrlError);
+          }
+          
+          // Method 4: Try with Intent (Android specific)
+          try {
+            const intentUrl = `intent://${filePath}#Intent;action=android.intent.action.VIEW;type=application/pdf;end`;
+            await Linking.openURL(intentUrl);
+            console.log('PDF opened successfully with Intent');
+            return;
+          } catch (intentError) {
+            console.log('Intent failed:', intentError);
+          }
+          
+          // If all methods fail, show user-friendly message
+          throw new Error('No app can handle this file type');
+        }
+      } else {
+        // For iOS, use FileViewer
+        await FileViewer.open(filePath);
+        console.log('PDF opened successfully with FileViewer');
+      }
     } catch (error) {
       console.error('Failed to open PDF:', error);
-      Alert.alert('Error', 'Failed to open PDF.');
+      
+      // User-friendly error message with helpful suggestions
+      Alert.alert(
+        'PDF Saved Successfully! 📄', 
+        'Your Annual Salary Package PDF has been saved to your Downloads folder.\n\nTo open it:\n• Go to your Downloads folder\n• Tap on "Annual_Salary_Package.pdf"\n• Choose a PDF viewer app\n\nRecommended apps: Google PDF Viewer, Adobe Reader, or your device\'s built-in PDF viewer.',
+        [
+          { text: 'Show File Location', onPress: () => showFileLocation(filePath) },
+          { text: 'OK' }
+        ]
+      );
+    }
+  };
+
+  const showFileLocation = (filePath) => {
+    Alert.alert(
+      '📁 PDF File Location',
+      `Your Annual Salary Package PDF is saved at:\n\n${filePath}\n\n📱 To open it manually:\n• Open your File Manager app\n• Go to Downloads folder\n• Find "Annual_Salary_Package.pdf"\n• Tap to open with a PDF viewer\n\n💡 Tip: Most Android devices have a built-in PDF viewer. If not, install Google PDF Viewer from Play Store.`,
+      [
+        { text: 'Copy Path', onPress: () => {
+          // You can add clipboard functionality here if needed
+          Alert.alert('Path copied to clipboard');
+        }},
+        { text: 'OK' }
+      ]
+    );
+  };
+
+  const handleGrantPermission = async () => {
+    const hasPermission = await requestStoragePermission();
+    if (hasPermission) {
+      generateAndDownloadPDF();
     }
   };
 
@@ -687,37 +878,45 @@ const AnnualSalaryPackage = () => {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Text style={styles.title}>Get your Annual Package Here:</Text>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+    <>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        <TouchableOpacity
-          onPress={openpackage}
-          style={[styles.button, { backgroundColor: '#E97C1F' }]}
+        <Text style={styles.title}>Get your Annual Package Here:</Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <Icon name={'eye-outline'} style={styles.icon} />
-          <Text style={styles.buttonText}>View</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={openpackage}
+            style={[styles.button, { backgroundColor: '#E97C1F' }]}
+          >
+            <Icon name={'eye-outline'} style={styles.icon} />
+            <Text style={styles.buttonText}>View</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={generateAndDownloadPDF}
-          style={[styles.button, { backgroundColor: '#161719' }]}
-        >
-          <Icon1 name={'download'} style={styles.icon} />
-          <Text style={styles.buttonText}>Download</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TouchableOpacity
+            onPress={generateAndDownloadPDF}
+            style={[styles.button, { backgroundColor: '#161719' }]}
+          >
+            <Icon1 name={'download'} style={styles.icon} />
+            <Text style={styles.buttonText}>Download</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      <PermissionModal
+        visible={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        onGrantPermission={handleGrantPermission}
+      />
+    </>
   );
 };
 

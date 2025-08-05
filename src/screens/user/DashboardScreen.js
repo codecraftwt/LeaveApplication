@@ -1,20 +1,110 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Text, Alert } from 'react-native';
 import ContributionCard from '../../components/dashboard/ContributionCard';
 import MonthStats from '../../components/dashboard/MonthStats';
 import EventsList from '../../components/dashboard/EventsList';
 import { p } from '../../utils/Responsive';
 import { useSelector, useDispatch } from 'react-redux';
-import { getDashboard } from '../../redux/slices/authSlice';
+import { getDashboard, logout, getUser } from '../../redux/slices/authSlice';
 import LeaveInfo from '../../components/dashboard/LeaveInfo';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DashboardScreen = () => {
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   const user = useSelector(state => state.auth.user);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  // Function to handle automatic logout
+  const handleAutoLogout = useCallback(async () => {
+    if (isLoggingOut) return; // Prevent multiple logout attempts
+
+    try {
+      setIsLoggingOut(true);
+      console.log('Starting auto logout process...');
+
+      // Clear AsyncStorage
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+
+      // Dispatch logout action
+      dispatch(logout());
+
+      // Show alert to user with timeout
+      Alert.alert(
+        'Account Deactivated',
+        'Your account has been deactivated. You have been logged out.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate to login screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            },
+          },
+        ],
+        {
+          cancelable: false, // Prevent dismissing by tapping outside
+        },
+      );
+
+      // Force navigation to login screen after 3 seconds regardless of user interaction
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }, 3000);
+    } catch (error) {
+      console.error('Error during auto logout:', error);
+      // Even if there's an error, still navigate to login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, [dispatch, navigation, isLoggingOut]);
+
+  // Check user status and auto logout if inactive
+  useEffect(() => {
+    if (user?.status) {
+      console.log('Checking user status:', user.status);
+      const inactiveStatuses = [
+        'inactive',
+        'deactivated',
+        'suspended',
+        'terminated',
+        'blocked',
+      ];
+      if (inactiveStatuses.includes(user.status.toLowerCase())) {
+        console.log('User status is inactive, triggering auto logout');
+        handleAutoLogout();
+      }
+    }
+  }, [user?.status, handleAutoLogout]);
+
   useEffect(() => {
     if (user?.id) {
       dispatch(getDashboard(user.id));
     }
+  }, [dispatch, user?.id]);
+
+  // Periodic check for user status changes (every 30 seconds)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const interval = setInterval(() => {
+      // Fetch latest user data to check for status changes
+      dispatch(getUser(user.id));
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
   }, [dispatch, user?.id]);
 
   return (
