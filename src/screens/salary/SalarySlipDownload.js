@@ -398,6 +398,7 @@ const SalarySlip = () => {
         const granted = await requestExternalStoragePermission();
 
         if (!granted) {
+          setLastAttemptedItem(item);
           setShowPermissionModal(true);
           return;
         }
@@ -458,13 +459,17 @@ const SalarySlip = () => {
         
         // Check if it's a permission-related error
         if (error.message && error.message.includes('permission')) {
+          setLastAttemptedItem(item);
           setShowPermissionModal(true);
         } else {
           Alert.alert(
             'PDF Generation Failed', 
             'Unable to generate PDF. Please check your storage permissions and try again.',
             [
-              { text: 'Check Permissions', onPress: () => setShowPermissionModal(true) },
+              { text: 'Check Permissions', onPress: () => {
+                setLastAttemptedItem(item);
+                setShowPermissionModal(true);
+              }},
               { text: 'OK' }
             ]
           );
@@ -480,35 +485,27 @@ const SalarySlip = () => {
         }
         
         console.log('HTML content length:', htmlContent.length);
-        const timestamp = Date.now();
         const monthName = getMonthName(item.month);
-        const filePath = Platform.OS === 'android' 
-          ? `${RNFS.DownloadDirectoryPath}/Salary_Slip_${monthName}_${selectedYear}.pdf`
-          : `${RNFS.DocumentDirectoryPath}/Salary_Slip_${monthName}_${selectedYear}.pdf`;
 
         const options = {
           html: htmlContent,
           fileName: `Salary_Slip_${monthName}_${selectedYear}`,
-          directory: Platform.OS === 'android' ? 'Downloads' : 'Documents',
+          directory: 'Documents',
         };
 
         const file = await RNHTMLtoPDF.convert(options);
-        console.log('PDF generated at:', file.filePath);
+        const pdfFilePath = file.filePath;
+        console.log('PDF generated at:', pdfFilePath);
         
-        // Check if destination file already exists and remove it
-        const destExists = await RNFS.exists(filePath);
-        if (destExists) {
-          await RNFS.unlink(filePath);
-        }
-        
-        await RNFS.moveFile(file.filePath, filePath);
-        console.log('PDF moved to:', filePath);
+        // For iOS, we don't need to move the file - it's already in the Documents directory
+        // Just use the generated file path directly
+        console.log('PDF ready for viewing:', pdfFilePath);
         
         Alert.alert(
           'PDF Generated Successfully! 📄', 
-          `Your ${monthName} ${selectedYear} Salary Slip PDF has been saved.\n\nFile: Salary_Slip_${monthName}_${selectedYear}.pdf`, 
+          `Your ${monthName} ${selectedYear} Salary Slip PDF has been saved to your Documents folder.\n\nFile: Salary_Slip_${monthName}_${selectedYear}.pdf`, 
           [
-            { text: 'Open PDF', onPress: () => openPDF(filePath) },
+            { text: 'Open PDF', onPress: () => openPDF(pdfFilePath) },
             { text: 'OK' }
           ]
         );
@@ -597,17 +594,35 @@ const SalarySlip = () => {
           throw new Error('No app can handle this file type');
         }
       } else {
-        // For iOS, use FileViewer
-        await FileViewer.open(filePath);
-        console.log('PDF opened successfully with FileViewer');
+        // For iOS, use FileViewer with proper error handling
+        try {
+          await FileViewer.open(filePath);
+          console.log('PDF opened successfully with FileViewer');
+        } catch (fileViewerError) {
+          console.log('FileViewer failed on iOS:', fileViewerError);
+          // Try alternative method for iOS
+          try {
+            const fileUrl = `file://${filePath}`;
+            await Linking.openURL(fileUrl);
+            console.log('PDF opened successfully with file URL on iOS');
+          } catch (linkingError) {
+            console.log('Linking failed on iOS:', linkingError);
+            throw new Error('Unable to open PDF on iOS');
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to open PDF:', error);
       
       // User-friendly error message with helpful suggestions
+      const folderName = Platform.OS === 'ios' ? 'Documents folder' : 'Downloads folder';
+      const instructions = Platform.OS === 'ios' 
+        ? '• Open the Files app\n• Go to "On My iPhone/iPad" > "Documents"\n• Tap on the PDF file\n• Choose a PDF viewer app'
+        : '• Go to your Downloads folder\n• Tap on the PDF file\n• Choose a PDF viewer app';
+      
       Alert.alert(
         'PDF Saved Successfully! 📄', 
-        'Your Salary Slip PDF has been saved to your Downloads folder.\n\nTo open it:\n• Go to your Downloads folder\n• Tap on the PDF file\n• Choose a PDF viewer app\n\nRecommended apps: Google PDF Viewer, Adobe Reader, or your device\'s built-in PDF viewer.',
+        `Your Salary Slip PDF has been saved to your ${folderName}.\n\nTo open it:\n${instructions}\n\nRecommended apps: ${Platform.OS === 'ios' ? 'Preview, Adobe Reader, or your device\'s built-in PDF viewer' : 'Google PDF Viewer, Adobe Reader, or your device\'s built-in PDF viewer'}.`,
         [
           { text: 'Show File Location', onPress: () => showFileLocation(filePath) },
           { text: 'OK' }
@@ -617,9 +632,17 @@ const SalarySlip = () => {
   };
 
   const showFileLocation = (filePath) => {
+    const folderName = Platform.OS === 'ios' ? 'Documents folder' : 'Downloads folder';
+    const instructions = Platform.OS === 'ios'
+      ? '• Open the Files app\n• Go to "On My iPhone/iPad" > "Documents"\n• Find the PDF file\n• Tap to open with a PDF viewer'
+      : '• Open your File Manager app\n• Go to Downloads folder\n• Find the PDF file\n• Tap to open with a PDF viewer';
+    const tip = Platform.OS === 'ios'
+      ? '💡 Tip: iOS has a built-in PDF viewer. You can also use Preview or install Adobe Reader from the App Store.'
+      : '💡 Tip: Most Android devices have a built-in PDF viewer. If not, install Google PDF Viewer from Play Store.';
+    
     Alert.alert(
       '📁 PDF File Location',
-      `Your Salary Slip PDF is saved at:\n\n${filePath}\n\n📱 To open it manually:\n• Open your File Manager app\n• Go to Downloads folder\n• Find the PDF file\n• Tap to open with a PDF viewer\n\n💡 Tip: Most Android devices have a built-in PDF viewer. If not, install Google PDF Viewer from Play Store.`,
+      `Your Salary Slip PDF is saved at:\n\n${filePath}\n\n📱 To open it manually:\n${instructions}\n\n${tip}`,
       [
         { text: 'Copy Path', onPress: () => {
           // You can add clipboard functionality here if needed
@@ -630,11 +653,14 @@ const SalarySlip = () => {
     );
   };
 
+  const [lastAttemptedItem, setLastAttemptedItem] = useState(null);
+
   const handleGrantPermission = async () => {
     const hasPermission = await requestExternalStoragePermission();
-    if (hasPermission) {
-      // We need to store the current item to retry the PDF generation
-      // This is a simple approach - you might want to store the item in state
+    if (hasPermission && lastAttemptedItem) {
+      // Retry the PDF generation with the last attempted item
+      generateAndDownloadPDF(lastAttemptedItem);
+    } else if (hasPermission) {
       Alert.alert('Permission Granted', 'Please try downloading the PDF again.');
     }
   };

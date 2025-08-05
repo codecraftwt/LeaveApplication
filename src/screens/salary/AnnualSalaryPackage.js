@@ -664,31 +664,22 @@ const AnnualSalaryPackage = () => {
         const options = {
           html: htmlContent,
           fileName: 'Annual_Salary_Package',
-          directory: Platform.OS === 'android' ? 'Downloads' : 'Documents',
+          directory: 'Documents',
         };
 
         const file = await RNHTMLtoPDF.convert(options);
         const pdfFilePath = file.filePath;
         console.log('PDF generated at:', pdfFilePath);
         
-        const filePath = Platform.OS === 'android' 
-          ? `${RNFS.DownloadDirectoryPath}/Annual_Salary_Package.pdf`
-          : `${RNFS.DocumentDirectoryPath}/Annual_Salary_Package.pdf`;
-        
-        // Check if destination file already exists and remove it
-        const destExists = await RNFS.exists(filePath);
-        if (destExists) {
-          await RNFS.unlink(filePath);
-        }
-        
-        await RNFS.moveFile(pdfFilePath, filePath);
-        console.log('PDF moved to:', filePath);
+        // For iOS, we don't need to move the file - it's already in the Documents directory
+        // Just use the generated file path directly
+        console.log('PDF ready for viewing:', pdfFilePath);
 
         Alert.alert(
           'PDF Generated Successfully! 📄', 
-          `Your Annual Salary Package PDF has been saved.\n\nFile: Annual_Salary_Package.pdf`, 
+          `Your Annual Salary Package PDF has been saved to your Documents folder.\n\nFile: Annual_Salary_Package.pdf`, 
           [
-            { text: 'Open PDF', onPress: () => openPDF(filePath) },
+            { text: 'Open PDF', onPress: () => openPDF(pdfFilePath) },
             { text: 'OK' }
           ]
         );
@@ -776,17 +767,35 @@ const AnnualSalaryPackage = () => {
           throw new Error('No app can handle this file type');
         }
       } else {
-        // For iOS, use FileViewer
-        await FileViewer.open(filePath);
-        console.log('PDF opened successfully with FileViewer');
+        // For iOS, use FileViewer with proper error handling
+        try {
+          await FileViewer.open(filePath);
+          console.log('PDF opened successfully with FileViewer');
+        } catch (fileViewerError) {
+          console.log('FileViewer failed on iOS:', fileViewerError);
+          // Try alternative method for iOS
+          try {
+            const fileUrl = `file://${filePath}`;
+            await Linking.openURL(fileUrl);
+            console.log('PDF opened successfully with file URL on iOS');
+          } catch (linkingError) {
+            console.log('Linking failed on iOS:', linkingError);
+            throw new Error('Unable to open PDF on iOS');
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to open PDF:', error);
       
       // User-friendly error message with helpful suggestions
+      const folderName = Platform.OS === 'ios' ? 'Documents folder' : 'Downloads folder';
+      const instructions = Platform.OS === 'ios' 
+        ? '• Open the Files app\n• Go to "On My iPhone/iPad" > "Documents"\n• Tap on "Annual_Salary_Package.pdf"\n• Choose a PDF viewer app'
+        : '• Go to your Downloads folder\n• Tap on "Annual_Salary_Package.pdf"\n• Choose a PDF viewer app';
+      
       Alert.alert(
         'PDF Saved Successfully! 📄', 
-        'Your Annual Salary Package PDF has been saved to your Downloads folder.\n\nTo open it:\n• Go to your Downloads folder\n• Tap on "Annual_Salary_Package.pdf"\n• Choose a PDF viewer app\n\nRecommended apps: Google PDF Viewer, Adobe Reader, or your device\'s built-in PDF viewer.',
+        `Your Annual Salary Package PDF has been saved to your ${folderName}.\n\nTo open it:\n${instructions}\n\nRecommended apps: ${Platform.OS === 'ios' ? 'Preview, Adobe Reader, or your device\'s built-in PDF viewer' : 'Google PDF Viewer, Adobe Reader, or your device\'s built-in PDF viewer'}.`,
         [
           { text: 'Show File Location', onPress: () => showFileLocation(filePath) },
           { text: 'OK' }
@@ -796,9 +805,17 @@ const AnnualSalaryPackage = () => {
   };
 
   const showFileLocation = (filePath) => {
+    const folderName = Platform.OS === 'ios' ? 'Documents folder' : 'Downloads folder';
+    const instructions = Platform.OS === 'ios'
+      ? '• Open the Files app\n• Go to "On My iPhone/iPad" > "Documents"\n• Find "Annual_Salary_Package.pdf"\n• Tap to open with a PDF viewer'
+      : '• Open your File Manager app\n• Go to Downloads folder\n• Find "Annual_Salary_Package.pdf"\n• Tap to open with a PDF viewer';
+    const tip = Platform.OS === 'ios'
+      ? '💡 Tip: iOS has a built-in PDF viewer. You can also use Preview or install Adobe Reader from the App Store.'
+      : '💡 Tip: Most Android devices have a built-in PDF viewer. If not, install Google PDF Viewer from Play Store.';
+    
     Alert.alert(
       '📁 PDF File Location',
-      `Your Annual Salary Package PDF is saved at:\n\n${filePath}\n\n📱 To open it manually:\n• Open your File Manager app\n• Go to Downloads folder\n• Find "Annual_Salary_Package.pdf"\n• Tap to open with a PDF viewer\n\n💡 Tip: Most Android devices have a built-in PDF viewer. If not, install Google PDF Viewer from Play Store.`,
+      `Your Annual Salary Package PDF is saved at:\n\n${filePath}\n\n📱 To open it manually:\n${instructions}\n\n${tip}`,
       [
         { text: 'Copy Path', onPress: () => {
           // You can add clipboard functionality here if needed
