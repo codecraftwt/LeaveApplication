@@ -98,7 +98,9 @@ const ListStatus = () => {
     );
   }, [officeData2]);
 
-  const allempStatus = useSelector(state => state?.employeeAnalytics?.teamStatus);
+  const allempStatus = useSelector(
+    state => state?.employeeAnalytics?.teamStatus,
+  );
   const empid = useSelector(state => state?.user?.data?.data?.user?.id);
 
   const convertDateFormat = dateString => {
@@ -305,33 +307,31 @@ const ListStatus = () => {
   const [tempSelectedEmployee, setTempSelectedEmployee] = useState(null);
 
   const handleApprove = async () => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee) {
+      console.log('No employee selected for approval');
+      return;
+    }
 
     try {
       setIsApproving(true);
       const response = await dispatch(
-        approveRejectEmpStatus(
-          selectedEmployee.id,
-          selectedEmployee.emp_id, // FIXED: Use emp_id instead of user_details.id
-          1, // Approval status
-          'Approved by manager', // Default comment
-        ),
+        approveRejectEmpStatus({
+          id: selectedEmployee.id,
+          empId: selectedEmployee.emp_id,
+          workstatus: 1, // Approval status
+          comment: 'Approved by manager',
+        }),
       );
 
-      if (response) {
-        toast.show('Status approved successfully', {
-          type: 'success',
-          placement: 'bottom',
-        });
-        setSelectedEmployee(null);
+      if (response?.payload) {
+        console.log('Status approved successfully');
+        setSelectedEmployee(null); // Close main modal
         dispatch(getEmpStatus()); // Refresh data
+      } else {
+        console.log('Approval failed - no response payload');
       }
     } catch (error) {
       console.log('Approve Error:', error);
-      toast.show(error?.message || 'Failed to approve status', {
-        type: 'danger',
-        placement: 'bottom',
-      });
     } finally {
       setIsApproving(false);
     }
@@ -339,10 +339,7 @@ const ListStatus = () => {
 
   const handleRejectSubmit = async () => {
     if (!rejectionReason.trim()) {
-      toast.show('Please provide a reason for rejection', {
-        type: 'warning',
-        placement: 'bottom',
-      });
+      console.log('Rejection reason is required');
       return;
     }
 
@@ -351,41 +348,33 @@ const ListStatus = () => {
       Platform.OS === 'ios' ? tempSelectedEmployee : selectedEmployee;
 
     if (!employeeData) {
-      toast.show('Employee data not found', {
-        type: 'danger',
-        placement: 'bottom',
-      });
+      console.log('Employee data not found for rejection');
       return;
     }
 
     try {
       setIsRejecting(true);
       const response = await dispatch(
-        approveRejectEmpStatus(
-          employeeData.id,
-          employeeData.emp_id, // FIXED: Use emp_id instead of user_details.id
-          0, // Rejection status
-          rejectionReason,
-        ),
+        approveRejectEmpStatus({
+          id: employeeData.id,
+          empId: employeeData.emp_id,
+          workstatus: 0, // Rejection status
+          comment: rejectionReason,
+        }),
       );
 
-      if (response) {
-        toast.show('Status rejected successfully', {
-          type: 'success',
-          placement: 'bottom',
-        });
-        setRejectModalVisible(false);
+      if (response?.payload) {
+        console.log('Status rejected successfully');
+        setRejectModalVisible(false); // Close reject modal
         setRejectionReason('');
-        setSelectedEmployee(null);
+        setSelectedEmployee(null); // Close main modal
         setTempSelectedEmployee(null);
         dispatch(getEmpStatus()); // Refresh data
+      } else {
+        console.log('Rejection failed - no response payload');
       }
     } catch (error) {
       console.log('Reject Error:', error);
-      toast.show(error?.message || 'Failed to reject status', {
-        type: 'danger',
-        placement: 'bottom',
-      });
     } finally {
       setIsRejecting(false);
     }
@@ -402,35 +391,32 @@ const ListStatus = () => {
 
   return (
     <View style={styles.container}>
-       <View
-          style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-          
-            margin: p(10),
-          
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by name or date..."
-              placeholderTextColor={'#898186'}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
 
-          <View style={styles.TopContainer}>
-            <TouchableOpacity style={styles.filter} onPress={openfilter}>
-              <Feather name="sliders" size={18} color={'#3660f9'} />
-            </TouchableOpacity>
-          </View>
+          margin: p(10),
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name or date..."
+            placeholderTextColor={'#898186'}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
+
+        <View style={styles.TopContainer}>
+          <TouchableOpacity style={styles.filter} onPress={openfilter}>
+            <Feather name="sliders" size={18} color={'#3660f9'} />
+          </TouchableOpacity>
+        </View>
+      </View>
       <View style={styles.main}>
         <StatusBar barStyle="light-content" backgroundColor="#3660f9" />
-
-       
 
         {showFilterData && (
           <View style={styles.dataContainer}>

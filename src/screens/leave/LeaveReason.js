@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,30 @@ import {
   SafeAreaView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { p } from '../../utils/Responsive';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { approveLeave, rejectLeave, resetApproveRejectState } from '../../redux/slices/leaveSlice';
 
 export default function LeaveReason() {
   const navigation = useNavigation();
   const route = useRoute();
+  const dispatch = useDispatch();
+
+
+  // Redux selectors
+  const { 
+    approveLeaveLoading, 
+    approveLeaveError, 
+    approveLeaveSuccess,
+    rejectLeaveLoading, 
+    rejectLeaveError, 
+    rejectLeaveSuccess 
+  } = useSelector(state => state.leaves);
 
   // Use static props if none passed via route
   const employee = route.params?.employee || {
@@ -38,16 +53,46 @@ export default function LeaveReason() {
   const [status, setStatus] = useState(employee.status);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [isApproving, setIsApproving] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
+
+  // Reset state when component unmounts
+  useEffect(() => {
+    return () => {
+      dispatch(resetApproveRejectState());
+    };
+  }, [dispatch]);
+
+  // Handle API success/error responses
+  useEffect(() => {
+    if (approveLeaveSuccess) {
+      setStatus('Approved');
+      dispatch(resetApproveRejectState());
+      navigation.navigate('Drawer', { screen: 'All Leaves' });
+    }
+    
+    if (rejectLeaveSuccess) {
+      setStatus('Rejected');
+      setRejectModalVisible(false);
+      employee.reject_reason = rejectionReason;
+      dispatch(resetApproveRejectState());
+      navigation.navigate('Drawer', { screen: 'All Leaves' });
+    }
+  }, [approveLeaveSuccess, rejectLeaveSuccess, dispatch, rejectionReason, employee, navigation]);
+
+  // Handle API errors (navigate back)
+  useEffect(() => {
+    if (approveLeaveError) {
+      dispatch(resetApproveRejectState());
+      navigation.navigate('Drawer', { screen: 'All Leaves' });
+    }
+    
+    if (rejectLeaveError) {
+      dispatch(resetApproveRejectState());
+      navigation.navigate('Drawer', { screen: 'All Leaves' });
+    }
+  }, [approveLeaveError, rejectLeaveError, dispatch, navigation]);
 
   const handleApprove = () => {
-    setIsApproving(true);
-    setTimeout(() => {
-      setStatus('Approved');
-      setIsApproving(false);
-      navigation.goBack();
-    }, 1000);
+    dispatch(approveLeave({ id: employee.id }));
   };
 
   const handleReject = () => {
@@ -56,18 +101,14 @@ export default function LeaveReason() {
 
   const handleRejectSubmit = () => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
       return;
     }
-    setIsRejecting(true);
-    setTimeout(() => {
-      setStatus('Rejected');
-      setRejectModalVisible(false);
-      employee.reject_reason = rejectionReason;
-      setIsRejecting(false);
-      navigation.goBack();
-    }, 1000);
+    dispatch(rejectLeave({ id: employee.id, reason: rejectionReason }));
   };
+
+
+
+
 
   return (
     <SafeAreaView style={styles.mainContainer}>
@@ -227,9 +268,9 @@ export default function LeaveReason() {
               <TouchableOpacity
                 style={[styles.actionButton, styles.approveButton]}
                 onPress={handleApprove}
-                disabled={isApproving}
+                disabled={approveLeaveLoading}
               >
-                {isApproving ? (
+                {approveLeaveLoading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <>
@@ -244,9 +285,9 @@ export default function LeaveReason() {
               <TouchableOpacity
                 style={[styles.actionButton, styles.rejectButton]}
                 onPress={handleReject}
-                disabled={isRejecting}
+                disabled={rejectLeaveLoading}
               >
-                {isRejecting ? (
+                {rejectLeaveLoading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <>
@@ -260,65 +301,70 @@ export default function LeaveReason() {
         </View>
       </ScrollView>
 
-      {/* Reject Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={rejectModalVisible}
-        onRequestClose={() => setRejectModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setRejectModalVisible(false)}
-        >
-          <TouchableOpacity
-            activeOpacity={1}
-            style={styles.modalContent}
-            onPress={e => e.stopPropagation()}
-          >
-            <Text style={styles.modalTitle}>Reject Leave Request</Text>
-            <Text style={styles.modalSubtitle}>
-              Please provide a reason for rejection
-            </Text>
+             {/* Reject Modal */}
+       <Modal
+         animationType="slide"
+         transparent={true}
+         visible={rejectModalVisible}
+         onRequestClose={() => setRejectModalVisible(false)}
+       >
+         <TouchableOpacity
+           style={styles.modalOverlay}
+           activeOpacity={1}
+           onPress={() => setRejectModalVisible(false)}
+         >
+           <TouchableOpacity
+             activeOpacity={1}
+             style={styles.modalContent}
+             onPress={e => e.stopPropagation()}
+           >
+             <Text style={styles.modalTitle}>Reject Leave Request</Text>
+             <Text style={styles.modalSubtitle}>
+               Please provide a reason for rejection
+             </Text>
 
-            <TextInput
-              style={styles.reasonInput}
-              multiline
-              numberOfLines={4}
-              placeholder="Enter rejection reason..."
-              value={rejectionReason}
-              onChangeText={setRejectionReason}
-              textAlignVertical="top"
-            />
+             <TextInput
+               style={styles.reasonInput}
+               multiline
+               numberOfLines={4}
+               placeholder="Enter rejection reason..."
+               value={rejectionReason}
+               onChangeText={setRejectionReason}
+               textAlignVertical="top"
+             />
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setRejectModalVisible(false);
-                  setRejectionReason('');
-                }}
-              >
-                <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+             <View style={styles.modalButtons}>
+               <TouchableOpacity
+                 style={[styles.modalButton, styles.cancelButton]}
+                 onPress={() => {
+                   setRejectModalVisible(false);
+                   setRejectionReason('');
+                 }}
+               >
+                 <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
+                   Cancel
+                 </Text>
+               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
-                onPress={handleRejectSubmit}
-              >
-                <Text style={styles.modalButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+               <TouchableOpacity
+                 style={[styles.modalButton, styles.submitButton]}
+                 onPress={handleRejectSubmit}
+               >
+                 <Text style={styles.modalButtonText}>Submit</Text>
+               </TouchableOpacity>
+             </View>
+           </TouchableOpacity>
+         </TouchableOpacity>
+       </Modal>
+
+
+
+       
+
+      
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
@@ -334,7 +380,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? p(10) : p(18),
+    paddingTop: Platform.OS === 'ios' ? p(10) : p(40),
     paddingBottom: p(10),
     paddingHorizontal: p(16),
   },
@@ -594,4 +640,39 @@ const styles = StyleSheet.create({
     fontFamily: 'Rubik-Regular',
     lineHeight: p(20),
   },
+  successModalContent: {
+    alignItems: 'center',
+    paddingVertical: p(30),
+    paddingHorizontal: p(25),
+  },
+  successIconContainer: {
+    width: p(80),
+    height: p(80),
+    borderRadius: p(40),
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: p(20),
+  },
+  successTitle: {
+    color: '#4CAF50',
+    fontSize: p(24),
+    marginBottom: p(10),
+  },
+  successSubtitle: {
+    color: '#666',
+    fontSize: p(16),
+    textAlign: 'center',
+    lineHeight: p(24),
+    marginBottom: p(25),
+  },
+  successButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: p(15),
+    paddingHorizontal: p(30),
+    borderRadius: p(12),
+    minWidth: p(120),
+  },
+  
 });
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,38 +9,78 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
+  Modal,
+  Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { p } from '../../utils/Responsive';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getEmpLeaves } from '../../redux/slices/leaveSlice';
-import { useIsFocused } from '@react-navigation/native';
+import { getEmpLeaves, clearLastActionMessage } from '../../redux/slices/leaveSlice'; // Import clear action
 
 export default function AllLeaves() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const isFocused = useIsFocused();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState('card'); // 'card' or 'table'
+  const [viewMode, setViewMode] = useState('card');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const fadeAnim = useState(new Animated.Value(0))[0];
 
   const empLeaves = useSelector(state => state?.leaves?.empLeaves);
   const loading = useSelector(state => state?.allLeaves?.isLeaveLoading);
+  const lastActionMessage = useSelector(state => state?.leaves?.lastActionMessage); // Get message from Redux
 
-  const fetchLeaves = async () => {
-    {
-      await dispatch(getEmpLeaves());
+  // Handle showing modal when there's a new action message
+  useEffect(() => {
+    if (lastActionMessage) {
+      setModalMessage(lastActionMessage);
+      showModal();
+      
+      // Clear message after showing modal
+      setTimeout(() => {
+        dispatch(clearLastActionMessage());
+      }, 3000);
     }
+  }, [lastActionMessage]);
+
+  const showModal = () => {
+    setModalVisible(true);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      hideModal();
+    }, 3000);
   };
 
-  useEffect(() => {
-    if (isFocused) {
+  const hideModal = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
+    });
+  };
+
+  const fetchLeaves = async () => {
+    await dispatch(getEmpLeaves());
+  };
+
+  // Use useFocusEffect to fetch leaves immediately when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
       fetchLeaves();
-    }
-  }, [dispatch, isFocused]);
+    }, [dispatch])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -62,7 +102,6 @@ export default function AllLeaves() {
     });
   };
 
-  // Add a helper to format date strings to dd-mm-yy
   function formatDateDMY(dateStr) {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
@@ -78,7 +117,7 @@ export default function AllLeaves() {
         item.to_date && item.to_date !== item.from_date
           ? `${item.from_date} To ${item.to_date}`
           : item.from_date,
-      from_date: item.from_date, // for table view
+      from_date: item.from_date,
       duration: `${item.no_of_days} ${item.no_of_days > 1 ? 'Days' : 'Day'}`,
       status:
         item.status === 0
@@ -123,7 +162,7 @@ export default function AllLeaves() {
             style={styles.eyeButton}
             onPress={() => handlenavigate(item)}
           >
-            <Feather name="eye" size={p(18)} color="#3360f9" />
+            <Feather name="eye" size={p(14)} color="#3360f9" />
           </TouchableOpacity>
         </View>
         <View style={styles.cardRowBottom}>
@@ -179,7 +218,6 @@ export default function AllLeaves() {
     </View>
   );
 
-  // Table row renderer
   const renderTableHeader = () => (
     <View style={styles.tableHeaderRow}>
       <Text style={[styles.tableHeaderCell, styles.colName]}>Name</Text>
@@ -189,6 +227,7 @@ export default function AllLeaves() {
       <Text style={[styles.tableHeaderCell, styles.colAction]}>Action</Text>
     </View>
   );
+  
   const renderTableRow = ({ item }) => (
     <View style={styles.tableRow}>
       <Text style={[styles.tableCell, styles.colName]} numberOfLines={1}>
@@ -218,6 +257,20 @@ export default function AllLeaves() {
 
   return (
     <View style={styles.container}>
+      {/* Notification Modal */}
+      <Modal
+        transparent
+        visible={modalVisible}
+        onRequestClose={hideModal}
+        animationType="none"
+      >
+        <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>{modalMessage}</Text>
+          </View>
+        </Animated.View>
+      </Modal>
+
       <View style={styles.stickyHeader}>
         <View style={styles.headerRow}>
           <View style={styles.searchBarContainer}>
@@ -312,8 +365,6 @@ const styles = StyleSheet.create({
     paddingTop: p(15),
     paddingBottom: p(18),
     paddingHorizontal: p(18),
-    // borderBottomLeftRadius: p(18),
-    // borderBottomRightRadius: p(18),
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -461,13 +512,13 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     backgroundColor: '#f4f7fb',
-    padding: p(7),
+    padding: p(5),
     borderRadius: p(8),
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#3360f9',
-    marginLeft: p(8),
+    marginLeft: p(10),
   },
   divider: {
     height: 10,
@@ -510,7 +561,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Montserrat-SemiBold',
     color: '#3360f9',
-    fontSize: p(13),
+    fontSize: p(12),
     textAlign: 'left',
     paddingHorizontal: p(8),
   },
@@ -563,5 +614,26 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexGrow: 0,
     textAlign: 'center',
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: p(20),
+    borderRadius: p(10),
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '80%',
+  },
+  modalText: {
+    fontSize: p(16),
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#333',
   },
 });
