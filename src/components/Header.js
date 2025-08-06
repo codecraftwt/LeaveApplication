@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? p(40) : p(18),
+    paddingTop: Platform.OS === 'ios' ? p(40) : p(40),
     paddingBottom: p(10),
     paddingHorizontal: p(16),
   },
