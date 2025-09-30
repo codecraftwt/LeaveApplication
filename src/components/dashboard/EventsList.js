@@ -23,14 +23,25 @@ const tempData = {
 
 export default function EventsList() {
   const dashboard = useSelector(state => state.auth.dashboard);
-  const upcomingHolidays = dashboard?.upcoming_holidays || '';
+  const upcomingHolidays = dashboard?.upcoming_holidays || [];
   const todaysBirthdays = dashboard?.todays_birthdays || [];
   const todaysWorkAnniversary = dashboard?.todays_workanniversary || [];
+  
+  // Format upcoming holidays
+  const formatUpcomingHolidays = () => {
+    if (!upcomingHolidays || upcomingHolidays.length === 0) {
+      return 'No upcoming holidays';
+    }
+    return upcomingHolidays.map(holiday => 
+      `${holiday.formatted_event_date} - ${holiday.event_name}`
+    ).join('\n');
+  };
+  
   // Map event labels to data
   const eventData = {
     "Today's Birthday": todaysBirthdays.length > 0 ? todaysBirthdays.map(b => `${b.first_name} ${b.last_name}`).join(', ') : 'No birthdays today',
     "Today's Work Anniversary": todaysWorkAnniversary.length > 0 ? todaysWorkAnniversary.map(a => `${a.first_name} ${a.last_name}`).join(', ') : 'No work anniversaries today',
-    "Upcoming Holiday's": upcomingHolidays || 'No upcoming holidays',
+    "Upcoming Holiday's": formatUpcomingHolidays(),
   };
   // Add Upcoming Holidays event
   const allEvents = [
