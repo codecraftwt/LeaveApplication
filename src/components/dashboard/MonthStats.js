@@ -4,23 +4,13 @@ import { p } from '../../utils/Responsive';
 import { useSelector } from 'react-redux';
 
 const monthNames = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sept',
-  'Oct',
-  'Nov',
-  'Dec',
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec',
 ];
 
 export default function MonthStats() {
   const dashboard = useSelector(state => state.auth.dashboard);
-  const stats = dashboard|| {};
+  const stats = dashboard || {};
   const currentDate = new Date();
   const currentMonthIndex = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -30,53 +20,42 @@ export default function MonthStats() {
       month: monthNames[(currentMonthIndex - 1 + 12) % 12],
       year: currentYear + Math.floor((currentMonthIndex - 1) / 12),
       hours: stats.last_month || 0,
+      color: '#3B82F6', // Blue
     },
     {
       month: monthNames[(currentMonthIndex - 2 + 12) % 12],
       year: currentYear + Math.floor((currentMonthIndex - 2) / 12),
       hours: stats.preview_month || 0,
+      color: '#F59E0B', // Amber
     },
     {
       month: monthNames[(currentMonthIndex - 3 + 12) % 12],
       year: currentYear + Math.floor((currentMonthIndex - 3) / 12),
       hours: stats.long_preview_month || 0,
+      color: '#10B981', // Emerald
     },
   ];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Last Three Months Achieved Hours</Text>
-      <View style={styles.mainContainer}>
+      <Text style={styles.title}>Recent Achieved Hours</Text>
+
+      <View style={styles.unifiedCard}>
         {lastThreeMonths.map((item, idx) => (
-          <View
-            key={idx}
-            style={[
-              styles.box,
-              idx === 0 && {
-                backgroundColor: '#E7F2FF',
-                borderWidth: 1,
-                borderColor: '#2F80E9',
-                borderStyle: 'solid',
-              },
-              idx === 1 && {
-                backgroundColor: '#FFF4EA',
-                borderWidth: 1,
-                borderColor: '#FFA620',
-                borderStyle: 'solid',
-              },
-              idx === 2 && {
-                backgroundColor: '#F3FFF5',
-                borderWidth: 1,
-                borderColor: '#9CFFAE',
-                borderStyle: 'solid',
-              },
-            ]}
-          >
-            <Text style={styles.hours}>{item.hours}</Text>
-            <Text style={styles.date}>
-              {item.month} {item.year}
-            </Text>
-          </View>
+          <React.Fragment key={idx}>
+            <View style={styles.segment}>
+              <Text style={styles.hours}>{item.hours}</Text>
+              <View style={styles.dateRow}>
+                <View style={[styles.dot, { backgroundColor: item.color }]} />
+                <Text style={styles.date}>
+                  {item.month} {item.year}
+                </Text>
+              </View>
+            </View>
+
+            {/* Vertical Divider between segments */}
+            {idx < 2 && <View style={styles.divider} />}
+          </React.Fragment>
         ))}
       </View>
     </View>
@@ -85,35 +64,60 @@ export default function MonthStats() {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: p(16),
-  },
-  mainContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: p(5),
-  },
-  box: {
-    width: p(110),
-    height: p(80),
-    backgroundColor: '#F8F8F8',
-    borderRadius: p(10),
-    paddingHorizontal: p(5),
-    justifyContent: 'center',
-  },
-  hours: {
-    fontSize: p(26),
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#000',
-  },
-  date: {
-    fontSize: p(14),
-    fontFamily: 'Poppins-Regular',
-    color: '#000',
+    marginVertical: p(12),
   },
   title: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(16),
-    color: '#222',
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(17),
+    color: '#0F172A',
+    marginBottom: p(12),
+  },
+  unifiedCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    paddingVertical: p(20),
+    paddingHorizontal: p(4),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  divider: {
+    width: 1,
+    height: '70%',
+    backgroundColor: '#E2E8F0',
+  },
+  hours: {
+    fontSize: p(22),
+    fontFamily: 'Montserrat-Bold',
+    color: '#1E293B',
+    marginBottom: p(6),
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: p(8),
+    height: p(8),
+    borderRadius: p(4),
+    marginRight: p(6),
+  },
+  date: {
+    fontSize: p(12),
+    fontFamily: 'Poppins-Medium',
+    color: '#64748B',
   },
 });

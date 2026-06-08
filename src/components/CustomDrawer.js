@@ -6,6 +6,8 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { p } from '../utils/Responsive';
@@ -17,18 +19,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getUser } from '../redux/slices/authSlice';
 
 const menuItems = [
-  { label: 'Dashboard', icon: 'grid', screen: 'Dashboard' },
-  { label: 'Profile', icon: 'user', screen: 'Profile' },
+  { label: 'Dashboard', icon: 'grid', screen: 'HomeTabs', params: { screen: 'Dashboard' } },
   {
     label: 'Leave',
     icon: 'calendar',
     children: [
-      {
-        label: 'My Leaves',
-        icon: 'id-badge',
-        screen: 'My Leaves',
-        iconType: 'FontAwesome5',
-      },
       {
         label: 'All Leaves',
         icon: 'users',
@@ -53,33 +48,16 @@ const menuItems = [
         icon: 'list',
         screen: 'List Status',
         iconType: 'Feather',
-        allowedRoles: [1, 3, 10, 11, 12, 13],
+        allowedRoles: [1, 3, 10, 11, 12, 13, 14],
       },
     ],
   },
   { label: 'Salary Slip', icon: 'dollar-sign', screen: 'Salary Slip' },
   {
-    label: 'Employee Analytics',
-    icon: 'bar-chart-2',
-    screen: 'Employee Analytics',
-  },
-  {
     label: 'Hours Report',
     icon: 'clock',
     screen: 'Hours Report',
     allowedRoles: [1, 3, 10, 11, 12, 13, 14],
-  },
-  {
-    label: 'Food Court',
-    icon: 'coffee',
-    children: [
-      {
-        label: 'Dinner',
-        icon: 'utensils',
-        screen: 'Dinner',
-        iconType: 'FontAwesome5',
-      },
-    ],
   },
 ];
 
@@ -97,6 +75,7 @@ export default function CustomDrawer(props) {
 
   const { navigation } = props;
   const [expanded, setExpanded] = useState({});
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Function to filter menu items based on user role
   const getFilteredMenuItems = () => {
@@ -167,22 +146,13 @@ export default function CustomDrawer(props) {
   };
 
   const confirmLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Yes',
-          style: 'destructive',
-          onPress: () => {
-            handleLogout();
-            props.navigation.replace('Login');
-          },
-        },
-      ],
-      { cancelable: true },
-    );
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutModal(false);
+    handleLogout();
+    props.navigation.replace('Login');
   };
 
   return (
@@ -205,7 +175,7 @@ export default function CustomDrawer(props) {
       </View>
       <DrawerContentScrollView
         {...props}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: 10 }}
       >
         <View style={styles.menuSection}>
           {getFilteredMenuItems().map((item, idx) => {
@@ -222,7 +192,7 @@ export default function CustomDrawer(props) {
                     <Feather
                       name={isOpen ? 'chevron-up' : 'chevron-down'}
                       size={p(18)}
-                      color="#3360f9"
+                      color="#64748B"
                       style={{ marginLeft: 'auto' }}
                     />
                   </TouchableOpacity>
@@ -232,7 +202,7 @@ export default function CustomDrawer(props) {
                         <TouchableOpacity
                           key={child.label}
                           style={styles.subMenuItem}
-                          onPress={() => navigation.navigate(child.screen)}
+                          onPress={() => navigation.navigate(child.screen, child.params)}
                         >
                           {renderIcon(child.icon, child.iconType)}
                           <Text style={styles.subMenuLabel}>{child.label}</Text>
@@ -247,7 +217,7 @@ export default function CustomDrawer(props) {
               <TouchableOpacity
                 key={item.label}
                 style={styles.menuItem}
-                onPress={() => navigation.navigate(item.screen)}
+                onPress={() => navigation.navigate(item.screen, item.params)}
               >
                 {renderIcon(item.icon)}
                 <Text style={styles.menuLabel}>{item.label}</Text>
@@ -260,6 +230,43 @@ export default function CustomDrawer(props) {
         <Feather name="log-out" size={p(22)} color="red" />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
+
+      {/* Custom Logout Modal */}
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowLogoutModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalIconContainer}>
+                  <Feather name="log-out" size={p(22)} color="#E11D48" />
+                </View>
+                <Text style={styles.modalTitle}>Confirm Logout</Text>
+                <Text style={styles.modalMessage}>Are you sure you want to log out of your account?</Text>
+
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity
+                    style={styles.modalCancelButton}
+                    onPress={() => setShowLogoutModal(false)}
+                  >
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.modalConfirmButton}
+                    onPress={handleLogoutConfirm}
+                  >
+                    <Text style={styles.modalConfirmText}>Logout</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -267,92 +274,204 @@ export default function CustomDrawer(props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    // marginTop: p(10),
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    backgroundColor: '#3360f9',
+    backgroundColor: '#3660f9',
     alignItems: 'center',
-    paddingTop: p(70),
-    paddingBottom: p(24),
-    borderBottomLeftRadius: p(32),
-    borderBottomRightRadius: p(32),
-    marginTop: p(-15),
+    paddingTop: p(50),
+    paddingBottom: p(30),
+    borderBottomLeftRadius: p(30),
+    borderBottomRightRadius: p(30),
+    shadowColor: '#3660f9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+    marginBottom: p(5),
   },
   avatarContainer: {
-    backgroundColor: '#fff',
-    borderRadius: p(60),
-    padding: p(6),
-    marginBottom: p(10),
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(50),
+    padding: p(4),
+    marginBottom: p(12),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
   avatar: {
-    width: p(70),
-    height: p(70),
-    borderRadius: p(35),
-    backgroundColor: '#fff',
+    width: p(76),
+    height: p(76),
+    borderRadius: p(38),
+    backgroundColor: '#FFFFFF',
   },
   name: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: 'Poppins-Bold',
     fontSize: p(18),
     marginBottom: p(2),
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   role: {
-    color: '#fff',
-    fontFamily: 'Poppins-Regular',
+    color: '#E0E7FF',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    marginBottom: p(6),
     textAlign: 'center',
-    opacity: 0.85,
   },
   menuSection: {
-    // marginTop: p(-35),
-    paddingHorizontal: p(18),
+    paddingHorizontal: p(16),
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: p(14),
-    borderBottomWidth: 1,
-    borderBottomColor: '#f2f2f2',
+    paddingHorizontal: p(16),
+    marginBottom: p(14),
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(12),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   menuIcon: {
-    marginRight: p(18),
+    marginRight: p(14),
   },
   menuLabel: {
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(15),
-    color: '#222',
+    fontSize: p(14),
+    color: '#1E293B',
   },
   subMenuSection: {
-    backgroundColor: '#f7faff',
-    paddingLeft: p(30),
-    paddingBottom: p(4),
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(12),
+    marginTop: p(-8),
+    marginBottom: p(14),
+    paddingLeft: p(16),
+    paddingVertical: p(8),
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   subMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: p(10),
+    paddingVertical: p(12),
+    paddingHorizontal: p(16),
+    borderRadius: p(8),
   },
   subMenuLabel: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    color: '#444',
-    marginLeft: p(10),
+    color: '#475569',
+    marginLeft: p(12),
   },
   logoutContainer: {
-    padding: p(18),
-    borderTopWidth: 1,
-    borderTopColor: '#f2f2f2',
+    margin: p(16),
+    padding: p(16),
+    backgroundColor: '#FFF1F2',
+    borderRadius: p(16),
+    borderWidth: 1,
+    borderColor: '#FFE4E6',
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: p(27), // Move the logout button up
+    justifyContent: 'center',
+    marginBottom: p(30),
+    shadowColor: '#E11D48',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   logoutText: {
-    color: 'red',
-    fontFamily: 'Poppins-SemiBold',
+    color: '#E11D48',
+    fontFamily: 'Poppins-Bold',
     fontSize: p(16),
-    marginLeft: p(8),
+    marginLeft: p(10),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: p(20),
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(20),
+    padding: p(20),
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalIconContainer: {
+    width: p(50),
+    height: p(50),
+    borderRadius: p(25),
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: p(12),
+  },
+  modalTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(18),
+    color: '#0F172A',
+    marginBottom: p(6),
+  },
+  modalMessage: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(13),
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: p(20),
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    gap: p(10),
+    width: '100%',
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: p(12),
+    borderRadius: p(10),
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(13),
+    color: '#475569',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: p(12),
+    borderRadius: p(10),
+    backgroundColor: '#E11D48',
+    alignItems: 'center',
+    shadowColor: '#E11D48',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalConfirmText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(13),
+    color: '#FFFFFF',
   },
 });

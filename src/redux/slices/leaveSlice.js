@@ -11,8 +11,8 @@ export const getLeaves = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message ||
-          error.message ||
-          'Failed to fetch leaves',
+        error.message ||
+        'Failed to fetch leaves',
       );
     }
   },

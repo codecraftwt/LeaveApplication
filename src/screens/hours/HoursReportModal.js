@@ -93,7 +93,7 @@ export const HoursReportModal = ({
             </Text>
             <View style={styles.table}>
               <View style={styles.tableRow1}>
-                <Text style={[styles.tableHeader, {textAlign: 'left'}]}>
+                <Text style={[styles.tableHeader, {flex: 1.4, textAlign: 'left', paddingLeft: p(10)}]}>
                   Day
                 </Text>
                 <Text style={styles.tableHeader}>Morning</Text>
@@ -115,9 +115,9 @@ export const HoursReportModal = ({
                     key={`day-${index}`}
                     style={[
                       styles.tableRow,
-                      {backgroundColor: index % 2 === 0 ? '#f1f1f1' : '#fff'},
+                      {backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F8FAFC'},
                     ]}>
-                    <Text style={[styles.tableCell, {flex: 1}]}>
+                    <Text style={[styles.tableCell, {flex: 1.4, paddingLeft: p(10)}]}>
                       {dayObj.day}
                     </Text>
                     <Text style={[styles.tableCell, {textAlign: 'center'}]}>
@@ -126,7 +126,7 @@ export const HoursReportModal = ({
                     <Text style={[styles.tableCell, {textAlign: 'center'}]}>
                       {eveningHours.toFixed(2)}
                     </Text>
-                    <Text style={[styles.tableCell, {textAlign: 'center'}]}>
+                    <Text style={[styles.tableCell, {textAlign: 'center', color: '#1E293B', fontFamily: 'Poppins-Bold'}]}>
                       {totalHours.toFixed(2)}
                     </Text>
                   </View>
@@ -134,20 +134,20 @@ export const HoursReportModal = ({
               })}
 
               <View style={styles.tableRow3}>
-                <Text style={[styles.tableCell, {flex: 1, fontWeight: 'bold'}]}>
+                <Text style={[styles.tableCell, {flex: 1.4, paddingLeft: p(10), fontFamily: 'Poppins-Bold', color: '#1E293B'}]}>
                   Total
                 </Text>
                 <Text
                   style={[
                     styles.tableCell,
-                    {textAlign: 'center', fontWeight: 'bold'},
+                    {textAlign: 'center', fontFamily: 'Poppins-Bold', color: '#1E293B'},
                   ]}>
                   {totalMorning.toFixed(2)}
                 </Text>
                 <Text
                   style={[
                     styles.tableCell,
-                    {textAlign: 'center', fontWeight: 'bold'},
+                    {textAlign: 'center', fontFamily: 'Poppins-Bold', color: '#1E293B'},
                   ]}>
                   {totalEvening.toFixed(2)}
                 </Text>
@@ -156,7 +156,8 @@ export const HoursReportModal = ({
                     styles.tableCell,
                     {
                       textAlign: 'center',
-                      fontWeight: 'bold',
+                      fontFamily: 'Poppins-Bold',
+                      color: '#1E293B',
                     },
                   ]}>
                   {totalOverall.toFixed(2)}
@@ -173,67 +174,73 @@ export const HoursReportModal = ({
 const styles = StyleSheet.create({
   modalContentContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: p(8),
-    padding: p(20),
+    borderRadius: p(16),
+    padding: p(24),
     width: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
   },
   modalContent: {
     width: '100%',
   },
   modalTitle: {
-    fontSize: p(15),
-    marginBottom: p(8),
-    fontFamily: 'Rubik-Bold',
+    fontSize: p(18),
+    marginBottom: p(16),
+    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
   },
   table: {
     width: '100%',
-    borderBottomWidth: p(1),
-    borderBottomColor: '#DDDDDD',
+    borderRadius: p(12),
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
   },
   tableRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: p(9),
+    paddingVertical: p(14),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   tableRow1: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: p(9),
-
-    backgroundColor: '#E97C1F',
-    borderRadius: p(5),
-    marginBottom: p(9),
+    paddingVertical: p(14),
+    backgroundColor: '#3660f9',
   },
   tableRow3: {
-    marginTop: p(10),
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: p(9),
-    backgroundColor: '#F5F5DB',
-    borderRadius: p(9),
+    paddingVertical: p(14),
+    backgroundColor: '#F8FAFC',
   },
   tableHeader: {
-    fontSize: p(14),
-    fontFamily: 'Rubik-regular',
+    fontSize: p(13),
+    fontFamily: 'Poppins-Bold',
     color: '#FFFFFF',
     flex: 1,
     textAlign: 'center',
-    marginLeft: p(10),
+    textTransform: 'uppercase',
   },
   tableCell: {
     fontSize: p(14),
-    color: '#000',
+    color: '#334155',
     flex: 1,
-    fontFamily: 'Rubik-regular',
+    fontFamily: 'Poppins-Medium',
   },
   errorText: {
     fontSize: p(14),
+    fontFamily: 'Poppins-Medium',
     color: '#e74c3c',
     textAlign: 'center',
     marginTop: p(10),

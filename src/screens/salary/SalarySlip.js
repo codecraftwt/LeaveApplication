@@ -10,39 +10,46 @@ const Tab = createMaterialTopTabNavigator();
 
 export default function SalarySlip() {
   return (
-    <View style={{flex: 1, backgroundColor: '#3660f9'}}>
+    <View style={{flex: 1, backgroundColor: '#F8FAFC'}}>
       <View
         style={{
           flex: 1,
-          paddingTop: p(20),
-          backgroundColor: '#fff',
+          paddingTop: p(16),
+          backgroundColor: '#F8FAFC',
         }}>
         <Tab.Navigator
           screenOptions={{
-            tabBarActiveTintColor: '#fff',
-            tabBarInactiveTintColor: '#000',
+            tabBarActiveTintColor: '#FFFFFF',
+            tabBarInactiveTintColor: '#94a3b8',
             tabBarLabelStyle: {
-              fontSize: p(15),
+              fontSize: p(13),
               textTransform: 'none',
-              fontFamily: 'Rubik-Regular',
+              fontFamily: 'Poppins-SemiBold',
             },
             tabBarStyle: {
-              backgroundColor: '#f0f0f0',
-              borderRadius: p(10),
-              margin: p(10),
-              justifyContent: 'center',
-              paddingVertical: 0,
+              backgroundColor: '#FFFFFF',
+              borderRadius: p(16),
+              marginHorizontal: p(16),
+              marginBottom: p(10),
+              padding: p(4),
+              shadowColor: '#0f172a',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 3,
+              borderWidth: 1,
+              borderColor: '#f1f5f9',
             },
             tabBarItemStyle: {
-              borderRadius: p(10),
-              margin: p(2),
+              borderRadius: p(12),
+              paddingVertical: p(4),
             },
             tabBarIndicatorStyle: {
-              backgroundColor: '#3660f9',
-              borderRadius: p(10),
+              backgroundColor: '#3360f9', // Brand Blue
+              borderRadius: p(12),
               height: '100%',
             },
-            tabBarPressColor: '#e0e0e0',
+            tabBarPressColor: 'transparent',
           }}>
           <Tab.Screen
             name="Annual Package"

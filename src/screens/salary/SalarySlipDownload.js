@@ -719,9 +719,14 @@ const SalarySlip = () => {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.title}> Get Your Monthly Salary Slip Here:</Text>
-        <View style={styles.dropdownContainer}>
-          <Text style={styles.dropdownLabel}>Select Year:</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>Monthly Salary Slip</Text>
+            <Text style={styles.subtitle}>Select a year to view or download</Text>
+          </View>
+        </View>
+
+        <View style={styles.dropdownWrapper}>
           <SelectDropdown
             data={years}
             onSelect={selectedItem => setSelectedYear(selectedItem)}
@@ -730,11 +735,14 @@ const SalarySlip = () => {
             rowTextForSelection={item => item.toString()}
             renderButton={(selectedItem, isOpened) => (
               <View style={styles.dropdownButtonStyle}>
-                <Text style={styles.dropdownButtonTxtStyle}>
-                  {selectedYear || 'Select Year'}
-                </Text>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Icon name={'calendar-outline'} style={styles.dropdownIconLeft} />
+                  <Text style={styles.dropdownButtonTxtStyle}>
+                    {selectedYear || 'Select Year'}
+                  </Text>
+                </View>
                 <Icon
-                  name={'calendar-outline'}
+                  name={isOpened ? 'chevron-up-outline' : 'chevron-down-outline'}
                   style={styles.dropdownButtonArrowStyle}
                 />
               </View>
@@ -745,7 +753,9 @@ const SalarySlip = () => {
                   styles.dropdownItemStyle,
                   isSelected && styles.dropdownItemSelected,
                 ]}>
-                <Text style={styles.dropdownItemTxtStyle}>{item.toString()}</Text>
+                <Text style={[styles.dropdownItemTxtStyle, isSelected && {color: '#FFFFFF'}]}>
+                  {item.toString()}
+                </Text>
               </View>
             )}
             showsVerticalScrollIndicator={false}
@@ -753,75 +763,42 @@ const SalarySlip = () => {
           />
         </View>
 
-        <View style={styles.card}>
-          {/* Table Head */}
-          <View style={styles.tableHead}>
-            <View style={styles.tableHeadLeft}>
-              <Text
-                style={[
-                  styles.tableHeadText,
-                  {marginHorizontal: p(15)},
-                ]}>
-                Sr.no
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeadText,
-                  {marginHorizontal: p(15)},
-                ]}>
-                Month
-              </Text>
-            </View>
-            <View style={styles.tableHeadRight}>
-              <Text style={styles.tableHeadText}>Action</Text>
-            </View>
-          </View>
-
-          {/* Scrollable Table Rows */}
-          <ScrollView
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}>
-            {Array.isArray(salarySlip) && salarySlip.length > 0 ? (
-              salarySlip.map((item, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.tableRow,
-                    {backgroundColor: index % 2 === 0 ? '#f1f1f1' : '#f9f9f9'},
-                  ]}>
-                  <View style={styles.tableCellLeft}>
-                    <Text style={styles.tableCellText}>{index + 1}</Text>
-                    <Text style={[styles.tableCellText, {marginLeft: 35}]}>
-                      {monthNames[item.month - 1]}
-                    </Text>
-                  </View>
-                  <View style={styles.tableCellRight}>
-                    <TouchableOpacity onPress={() => view(item)}>
-                      <Icon
-                        name={'eye-outline'}
-                        style={styles.dropdownButtonArrowStylee}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => generateAndDownloadPDF(item)}>
-                      <Icon1
-                        name={'download'}
-                        style={[
-                          styles.dropdownButtonArrowStylee,
-                          {backgroundColor: '#333'},
-                        ]}
-                      />
-                    </TouchableOpacity>
-                  </View>
+        {/* Scrollable Table Rows */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{ paddingBottom: p(20) }}
+          showsVerticalScrollIndicator={false}>
+          {Array.isArray(salarySlip) && salarySlip.length > 0 ? (
+            salarySlip.map((item, index) => (
+              <View key={index} style={styles.monthCard}>
+                <View style={styles.monthIconWrapper}>
+                  <Icon name="calendar-outline" size={p(20)} color="#3360f9" />
                 </View>
-              ))
-            ) : (
+                <View style={styles.monthTextWrapper}>
+                  <Text style={styles.monthNameText}>
+                    {monthNames[item.month - 1]} {selectedYear}
+                  </Text>
+                  <Text style={styles.monthSubText}>Salary Slip</Text>
+                </View>
+                <View style={styles.colAction}>
+                  <TouchableOpacity onPress={() => view(item)} style={styles.actionBtn}>
+                    <Icon name={'eye'} style={styles.actionIconView} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => generateAndDownloadPDF(item)} style={styles.actionBtn}>
+                    <Icon1 name={'download'} style={styles.actionIconDownload} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={styles.noDataWrapper}>
+              <Icon1 name="folder-minus" size={p(44)} color="#cbd5e1" />
               <Text style={styles.noDataText}>
-                The first salary slip for this year has not been generated yet.
+                No salary slips found for {selectedYear}.
               </Text>
-            )}
-          </ScrollView>
-        </View>
+            </View>
+          )}
+        </ScrollView>
       </View>
 
       <PermissionModal
@@ -832,172 +809,171 @@ const SalarySlip = () => {
     </>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: p(20),
-    backgroundColor: '#fff',
+    paddingHorizontal: p(16),
+    paddingTop: p(10),
+    backgroundColor: '#F8FAFC',
+  },
+  headerRow: {
+    marginBottom: p(16),
+    marginTop: p(5),
   },
   title: {
-    fontSize: p(16),
-    fontFamily: 'Montserrat-SemiBold',
-    marginBottom: p(15),
-    color: '#333333',
+    fontSize: p(20),
+    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
   },
-  dropdownContainer: {
-    marginVertical: p(10),
+  subtitle: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-Regular',
+    color: '#64748B',
+    marginTop: p(2),
   },
-  dropdownLabel: {
-    fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
-    marginBottom: p(5),
-    color: '#000',
+  dropdownWrapper: {
+    marginBottom: p(20),
   },
   dropdownButtonStyle: {
-    backgroundColor: '#F9F9F9',
-    borderRadius: p(10),
-    borderWidth: p(1),
-    borderColor: '#F1F1F1',
-    paddingHorizontal: p(15),
-    paddingVertical: p(10),
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(12),
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: p(16),
+    height: p(55),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  dropdownIconLeft: {
+    fontSize: p(20),
+    color: '#3660f9',
+    marginRight: p(10),
   },
   dropdownButtonTxtStyle: {
-    color: '#333',
-    fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
+    color: '#1E293B',
+    fontSize: p(15),
+    fontFamily: 'Poppins-Medium',
   },
   dropdownButtonArrowStyle: {
-    fontSize: p(25),
-    color: '#3660f9',
-  },
-  iconss: {
-    flexDirection: 'row',
-  },
-  dropdownButtonArrowStylee: {
     fontSize: p(20),
-    color: '#fff',
-    marginHorizontal: p(10),
-    padding: p(3),
-    backgroundColor: '#3660f9',
-    borderRadius: p(5),
-  },
-  dropdownItemStyle: {
-    padding: p(15),
-    borderBottomWidth: p(1),
-    borderBottomColor: '#DDDDDD',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dropdownItemSelected: {
-    backgroundColor: '#3660f9',
-    color: '#fff',
-  },
-  dropdownItemTxtStyle: {
-    fontSize: p(16),
-    color: '#333',
-    fontFamily: 'Rubik-Regular',
+    color: '#94A3B8',
   },
   dropdownMenuStyle: {
     backgroundColor: '#FFFFFF',
-    borderRadius: p(8),
-    borderWidth: p(1),
-    borderColor: '#DDDDDD',
-    marginTop: p(5),
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: p(10),
-    shadowColor: '#000000',
-    shadowOffset: {width: 0, height: 2},
+    borderRadius: p(12),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    marginVertical: p(10),
+    shadowRadius: 10,
+    elevation: 5,
   },
-  table: {
-    width: '100%',
+  dropdownItemStyle: {
+    paddingVertical: p(12),
+    paddingHorizontal: p(16),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  tableHead: {
+  dropdownItemSelected: {
+    backgroundColor: '#3660f9',
+  },
+  dropdownItemTxtStyle: {
+    fontSize: p(15),
+    color: '#334155',
+    fontFamily: 'Poppins-Medium',
+  },
+  monthCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: p(1),
-    borderColor: '#DDDDDD',
-    backgroundColor: '#E97C1F',
-    borderTopLeftRadius: p(10),
-    borderTopRightRadius: p(10),
-    paddingVertical: p(10),
-    paddingHorizontal: p(15),
-    justifyContent: 'center',
-  },
-  tableHeadLeft: {
-    flexDirection: 'row',
-    flex: 3,
-    justifyContent: 'flex-start',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    padding: p(16),
+    marginBottom: p(12),
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
-  tableHeadRight: {
+  monthIconWrapper: {
+    width: p(44),
+    height: p(44),
+    borderRadius: p(12),
+    backgroundColor: '#f0f4ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: p(14),
+  },
+  monthTextWrapper: {
     flex: 1,
+  },
+  monthNameText: {
+    fontSize: p(15),
+    fontFamily: 'Poppins-Bold',
+    color: '#0f172a',
+  },
+  monthSubText: {
+    fontSize: p(12),
+    fontFamily: 'Poppins-Regular',
+    color: '#94a3b8',
+    marginTop: p(2),
+  },
+  colAction: {
+    flexDirection: 'row',
+    gap: p(10),
+  },
+  actionBtn: {
+    width: p(40),
+    height: p(40),
+    borderRadius: p(12),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  tableHeadText: {
-    fontSize: p(14),
-    color: '#FFFFFF',
-    fontFamily: 'Montserrat-SemiBold',
+  actionIconView: {
+    fontSize: p(18),
+    color: '#3360f9',
+    backgroundColor: '#f0f4ff',
+    padding: p(10),
+    borderRadius: p(10),
+    overflow: 'hidden',
   },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: p(2),
-    borderColor: '#FFFFFF',
-    paddingVertical: p(9),
-    paddingHorizontal: p(15),
-  },
-  tableCellLeft: {
-    flexDirection: 'row',
-    flex: 3,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingLeft: p(15),
-  },
-  tableCellRight: {
-    flexDirection: 'row',
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tableCellText: {
-    color: '#000',
-    fontFamily: 'Rubik-Regular',
+  actionIconDownload: {
     fontSize: p(16),
-    marginHorizontal: p(15),
-  },
-  button: {
-    backgroundColor: '#3498db',
-    paddingVertical: p(6),
-    paddingHorizontal: p(12),
-    borderRadius: p(5),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: p(14),
+    color: '#F36F21',
+    backgroundColor: '#fff4ed',
+    padding: p(10),
+    borderRadius: p(10),
+    overflow: 'hidden',
   },
   scrollView: {
-    flexGrow: 1,
-    marginBottom: p(150),
+    flex: 1,
+  },
+  noDataWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: p(60),
+    paddingHorizontal: p(20),
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   noDataText: {
     textAlign: 'center',
-    fontSize: p(16),
-    marginBottom: p(20),
-    color: '#555',
-    marginTop: 20,
-    fontFamily: 'Rubik-Regular',
+    fontSize: p(14),
+    color: '#94a3b8',
+    marginTop: p(15),
+    fontFamily: 'Poppins-Regular',
+    lineHeight: p(22),
   },
 });
 

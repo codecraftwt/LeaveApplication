@@ -26,8 +26,6 @@ export default function LeaveReason() {
   const route = useRoute();
   const dispatch = useDispatch();
 
-
-  // Redux selectors
   const { 
     approveLeaveLoading, 
     approveLeaveError, 
@@ -37,7 +35,6 @@ export default function LeaveReason() {
     rejectLeaveSuccess 
   } = useSelector(state => state.leaves);
 
-  // Use static props if none passed via route
   const employee = route.params?.employee || {
     id: '1',
     name: 'John Doe',
@@ -54,14 +51,12 @@ export default function LeaveReason() {
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  // Reset state when component unmounts
   useEffect(() => {
     return () => {
       dispatch(resetApproveRejectState());
     };
   }, [dispatch]);
 
-  // Handle API success/error responses
   useEffect(() => {
     if (approveLeaveSuccess) {
       setStatus('Approved');
@@ -78,14 +73,8 @@ export default function LeaveReason() {
     }
   }, [approveLeaveSuccess, rejectLeaveSuccess, dispatch, rejectionReason, employee, navigation]);
 
-  // Handle API errors (navigate back)
   useEffect(() => {
-    if (approveLeaveError) {
-      dispatch(resetApproveRejectState());
-      navigation.navigate('Drawer', { screen: 'All Leaves' });
-    }
-    
-    if (rejectLeaveError) {
+    if (approveLeaveError || rejectLeaveError) {
       dispatch(resetApproveRejectState());
       navigation.navigate('Drawer', { screen: 'All Leaves' });
     }
@@ -100,171 +89,125 @@ export default function LeaveReason() {
   };
 
   const handleRejectSubmit = () => {
-    if (!rejectionReason.trim()) {
-      return;
-    }
+    if (!rejectionReason.trim()) return;
     dispatch(rejectLeave({ id: employee.id, reason: rejectionReason }));
   };
 
+  const getStatusStyles = (statusStr) => {
+    switch (statusStr) {
+      case 'Approved': return { bg: '#D1FAE5', text: '#059669', icon: 'check-circle' };
+      case 'Pending': return { bg: '#FEF3C7', text: '#D97706', icon: 'clock' };
+      case 'Rejected': return { bg: '#FEE2E2', text: '#DC2626', icon: 'x-circle' };
+      default: return { bg: '#F1F5F9', text: '#64748B', icon: 'help-circle' };
+    }
+  };
 
-
-
+  const statusStyle = getStatusStyles(status);
 
   return (
     <SafeAreaView style={styles.mainContainer}>
       <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
-      {/* Custom Header for LeaveReason page with adjusted iOS padding */}
+      
       <View style={styles.headerContainer}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Feather name="arrow-left" size={p(22)} color="#fff" />
+            <Feather name="arrow-left" size={p(22)} color="#3660f9" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Leave Reason</Text>
-          <Image
-            source={require('../../assets/walstar11.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Text style={styles.headerTitle}>Review Leave</Text>
         </View>
       </View>
+      
       <ScrollView
+        style={{ backgroundColor: '#F8FAFC' }}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          {/* Employee Info */}
           <View style={styles.employeeInfo}>
             <View style={styles.avatarContainer}>
-              <Icon name="user-circle" size={p(50)} color="#ff9633" />
+              <Feather name="user" size={p(28)} color="#3660f9" />
             </View>
             <View style={styles.employeeDetails}>
-              <Text style={styles.employeeName}>{employee.name}</Text>
-              <Text style={styles.employeeEmail}>{employee.email}</Text>
+              <Text style={styles.employeeName} numberOfLines={2}>{employee.name}</Text>
+              <Text style={styles.employeeEmail} numberOfLines={1}>{employee.email}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+              <Feather name={statusStyle.icon} size={p(14)} color={statusStyle.text} style={{ marginRight: p(4) }} />
+              <Text style={[styles.statusText, { color: statusStyle.text }]}>{status}</Text>
             </View>
           </View>
 
-          {/* Status */}
-          <View style={styles.statusContainer}>
-            <View
-              style={[
-                styles.statusBadge,
-                {
-                  backgroundColor:
-                    status === 'Pending'
-                      ? '#FFF3E0'
-                      : status === 'Approved'
-                      ? '#E8F5E9'
-                      : '#FFEBEE',
-                },
-              ]}
-            >
-              <Icon
-                name={
-                  status === 'Pending'
-                    ? 'clock-o'
-                    : status === 'Approved'
-                    ? 'check-circle'
-                    : 'times-circle'
-                }
-                size={p(16)}
-                color={
-                  status === 'Pending'
-                    ? '#FF9800'
-                    : status === 'Approved'
-                    ? '#4CAF50'
-                    : '#F44336'
-                }
-              />
-              <Text
-                style={[
-                  styles.statusText,
-                  {
-                    color:
-                      status === 'Pending'
-                        ? '#FF9800'
-                        : status === 'Approved'
-                        ? '#4CAF50'
-                        : '#F44336',
-                  },
-                ]}
-              >
-                {status}
-              </Text>
-            </View>
-          </View>
+          <View style={styles.divider} />
 
-          {/* Leave Details */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Leave Information</Text>
-            <View style={styles.detailGrid}>
-              <View style={styles.detailItem}>
-                <View style={styles.detailIconContainer}>
-                  <Icon name="calendar" size={p(20)} color="#3660f9" />
-                </View>
-                <Text style={styles.detailLabel}>Leave Dates</Text>
+          <Text style={styles.sectionTitle}>Leave Details</Text>
+          <View style={styles.detailGrid}>
+            <View style={styles.detailItem}>
+              <View style={styles.detailIconContainer}>
+                <Feather name="calendar" size={p(18)} color="#3660f9" />
+              </View>
+              <View style={styles.detailTextWrap}>
+                <Text style={styles.detailLabel}>Dates</Text>
                 <Text style={styles.detailValue}>{employee.date}</Text>
               </View>
+            </View>
 
-              <View style={styles.detailItem}>
-                <View style={styles.detailIconContainer}>
-                  <Icon name="clock-o" size={p(20)} color="#3660f9" />
-                </View>
+            <View style={styles.detailItem}>
+              <View style={styles.detailIconContainer}>
+                <Feather name="clock" size={p(18)} color="#3660f9" />
+              </View>
+              <View style={styles.detailTextWrap}>
                 <Text style={styles.detailLabel}>Duration</Text>
                 <Text style={styles.detailValue}>
-                  {employee.no_of_days}{' '}
-                  {employee.no_of_days > 1 ? 'Days' : 'Day'}
+                  {employee.no_of_days} {employee.no_of_days > 1 ? 'Days' : 'Day'}
                 </Text>
               </View>
+            </View>
 
-              <View style={styles.detailItem}>
-                <View style={styles.detailIconContainer}>
-                  <Icon name="file-text" size={p(20)} color="#3660f9" />
-                </View>
-                <Text style={styles.detailLabel}>Leave Type</Text>
+            <View style={styles.detailItem}>
+              <View style={styles.detailIconContainer}>
+                <Feather name="tag" size={p(18)} color="#3660f9" />
+              </View>
+              <View style={styles.detailTextWrap}>
+                <Text style={styles.detailLabel}>Type</Text>
                 <Text style={styles.detailValue}>{employee.leave_type_id}</Text>
               </View>
             </View>
           </View>
 
-          {/* Reason */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Reason for Leave</Text>
             <View style={styles.descriptionBox}>
-              <Icon
-                name="comment"
-                size={p(20)}
-                color="#3660f9"
-                style={styles.descriptionIcon}
-              />
               <Text style={styles.descriptionText}>
-                {employee.leave_description || 'No description provided'}
+                {employee.leave_description || 'No reason provided by the employee.'}
               </Text>
             </View>
           </View>
 
-          {/* Rejection Reason */}
           {status === 'Rejected' && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Rejection Reason</Text>
-              <View style={[styles.descriptionBox, styles.rejectionBox]}>
-                <Icon
-                  name="times-circle"
-                  size={p(20)}
-                  color="#f44336"
-                  style={styles.descriptionIcon}
-                />
-                <Text style={[styles.descriptionText, styles.rejectionText]}>
-                  {rejectionReason ||
-                    employee.reject_reason ||
-                    'No rejection reason provided'}
+              <View style={styles.rejectionBox}>
+                <Text style={styles.rejectionText}>
+                  {rejectionReason || employee.reject_reason || 'No rejection reason recorded.'}
                 </Text>
               </View>
             </View>
           )}
 
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            {status === 'Pending' && (
+          {status === 'Pending' && (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.rejectButton]}
+                onPress={handleReject}
+                disabled={rejectLeaveLoading}
+              >
+                {rejectLeaveLoading ? (
+                  <ActivityIndicator color="#EF0107" size="small" />
+                ) : (
+                  <Text style={styles.rejectButtonText}>Reject Leave</Text>
+                )}
+              </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.actionButton, styles.approveButton]}
                 onPress={handleApprove}
@@ -274,145 +217,129 @@ export default function LeaveReason() {
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <>
-                    <Icon name="check-circle" size={p(18)} color="#fff" />
-                    <Text style={styles.buttonText}>Approve</Text>
+                    <Text style={styles.approveButtonText}>Approve Leave</Text>
                   </>
                 )}
               </TouchableOpacity>
-            )}
-
-            {status === 'Pending' && (
-              <TouchableOpacity
-                style={[styles.actionButton, styles.rejectButton]}
-                onPress={handleReject}
-                disabled={rejectLeaveLoading}
-              >
-                {rejectLeaveLoading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <>
-                    <Icon name="times-circle" size={p(18)} color="#fff" />
-                    <Text style={styles.buttonText}>Reject</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </ScrollView>
 
-             {/* Reject Modal */}
-       <Modal
-         animationType="slide"
-         transparent={true}
-         visible={rejectModalVisible}
-         onRequestClose={() => setRejectModalVisible(false)}
-       >
-         <TouchableOpacity
-           style={styles.modalOverlay}
-           activeOpacity={1}
-           onPress={() => setRejectModalVisible(false)}
-         >
-           <TouchableOpacity
-             activeOpacity={1}
-             style={styles.modalContent}
-             onPress={e => e.stopPropagation()}
-           >
-             <Text style={styles.modalTitle}>Reject Leave Request</Text>
-             <Text style={styles.modalSubtitle}>
-               Please provide a reason for rejection
-             </Text>
+      {/* Reject Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={rejectModalVisible}
+        onRequestClose={() => setRejectModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setRejectModalVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.modalContent}
+            onPress={e => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <Feather name="alert-triangle" size={p(24)} color="#EF4444" />
+              <Text style={styles.modalTitle}>Reject Application</Text>
+            </View>
+            
+            <Text style={styles.modalSubtitle}>
+              Please provide a clear reason for rejecting this leave application. This will be sent to the employee.
+            </Text>
 
-             <TextInput
-               style={styles.reasonInput}
-               multiline
-               numberOfLines={4}
-               placeholder="Enter rejection reason..."
-               value={rejectionReason}
-               onChangeText={setRejectionReason}
-               textAlignVertical="top"
-             />
+            <TextInput
+              style={styles.reasonInput}
+              multiline
+              numberOfLines={4}
+              placeholder="Enter rejection reason here..."
+              placeholderTextColor="#94A3B8"
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              textAlignVertical="top"
+            />
 
-             <View style={styles.modalButtons}>
-               <TouchableOpacity
-                 style={[styles.modalButton, styles.cancelButton]}
-                 onPress={() => {
-                   setRejectModalVisible(false);
-                   setRejectionReason('');
-                 }}
-               >
-                 <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
-                   Cancel
-                 </Text>
-               </TouchableOpacity>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setRejectModalVisible(false);
+                  setRejectionReason('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
 
-               <TouchableOpacity
-                 style={[styles.modalButton, styles.submitButton]}
-                 onPress={handleRejectSubmit}
-               >
-                 <Text style={styles.modalButtonText}>Submit</Text>
-               </TouchableOpacity>
-             </View>
-           </TouchableOpacity>
-         </TouchableOpacity>
-       </Modal>
-
-
-
-       
-
-      
+              <TouchableOpacity
+                style={[styles.modalButton, styles.submitButton]}
+                onPress={handleRejectSubmit}
+              >
+                <Text style={styles.submitButtonText}>Reject Leave</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     backgroundColor: '#3660f9',
   },
-  container: {
-    flexGrow: 1,
-  },
-  // Custom header styles for LeaveReason page
   headerContainer: {
-    backgroundColor: '#3360f9',
+    backgroundColor: '#3660f9',
+    borderBottomWidth: 0,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingTop: Platform.OS === 'ios' ? p(10) : p(40),
-    paddingBottom: p(10),
+    paddingBottom: p(20),
     paddingHorizontal: p(16),
   },
   backBtn: {
-    width: p(32),
-    height: p(32),
+    width: p(36),
+    height: p(36),
+    borderRadius: p(18),
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: p(12),
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTitle: {
     flex: 1,
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: 'Poppins-Bold',
     fontSize: p(18),
   },
-  logo: {
-    width: p(80),
-    height: p(36),
-    marginLeft: p(8),
+  container: {
+    flexGrow: 1,
+    padding: p(16),
+    paddingBottom: p(40),
   },
   card: {
     backgroundColor: '#fff',
-    marginTop: p(0),
-    // borderTopLeftRadius: p(25),
-    // borderTopRightRadius: p(25),
-    padding: p(25),
-    flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    borderRadius: p(20),
+    padding: p(20),
+    shadowColor: '#3660f9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   employeeInfo: {
     flexDirection: 'row',
@@ -420,259 +347,239 @@ const styles = StyleSheet.create({
     marginBottom: p(20),
   },
   avatarContainer: {
-    width: p(70),
-    height: p(70),
-    borderRadius: p(35),
-    backgroundColor: '#f0f4ff',
+    width: p(50),
+    height: p(50),
+    borderRadius: p(25),
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: p(15),
+    marginRight: p(14),
   },
   employeeDetails: {
     flex: 1,
+    marginRight: p(12),
   },
   employeeName: {
-    fontSize: p(18),
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#2c3e50',
-    marginBottom: p(4),
+    fontSize: p(16),
+    fontFamily: 'Poppins-Bold',
+    color: '#0F172A',
+    marginBottom: p(2),
   },
   employeeEmail: {
-    fontSize: p(14),
-    color: '#666',
-    fontFamily: 'Rubik-Regular',
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: p(25),
+    fontSize: p(13),
+    color: '#64748B',
+    fontFamily: 'Poppins-Medium',
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: p(8),
-    paddingHorizontal: p(15),
-    borderRadius: p(20),
+    paddingVertical: p(6),
+    paddingHorizontal: p(12),
+    borderRadius: p(16),
   },
   statusText: {
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
-    marginLeft: p(8),
+    fontSize: p(12),
+    fontFamily: 'Poppins-Bold',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginBottom: p(20),
   },
   section: {
-    marginBottom: p(25),
+    marginBottom: p(24),
   },
   sectionTitle: {
-    fontSize: p(16),
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#2c3e50',
-    marginBottom: p(15),
+    fontSize: p(15),
+    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
+    marginBottom: p(12),
   },
   detailGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    gap: p(12),
+    marginBottom: p(24),
   },
   detailItem: {
-    width: '31%',
-    backgroundColor: '#f1f5fa',
-    borderRadius: p(15),
-    padding: p(15),
-    marginBottom: p(15),
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    padding: p(14),
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 5,
+    elevation: 1,
   },
   detailIconContainer: {
-    width: p(35),
-    height: p(35),
-    borderRadius: p(20),
-    backgroundColor: '#f0f4ff',
+    width: p(40),
+    height: p(40),
+    borderRadius: p(12),
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: p(10),
+    marginRight: p(14),
+  },
+  detailTextWrap: {
+    flex: 1,
   },
   detailLabel: {
     fontSize: p(12),
-    color: '#666',
-    marginBottom: p(4),
-    fontFamily: 'Rubik-Regular',
+    color: '#64748B',
+    marginBottom: p(2),
+    fontFamily: 'Poppins-Medium',
   },
   detailValue: {
-    fontSize: p(12),
-    fontFamily: 'Rubik-Regular',
-    color: '#2c3e50',
-    textAlign: 'center',
+    fontSize: p(14),
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1E293B',
   },
   descriptionBox: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: p(15),
-    padding: p(20),
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  descriptionIcon: {
-    marginRight: p(10),
-    marginTop: p(2),
+    backgroundColor: '#F8FAFC',
+    borderRadius: p(16),
+    padding: p(16),
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   descriptionText: {
-    flex: 1,
     fontSize: p(14),
     lineHeight: p(22),
-    color: '#2c3e50',
-    fontFamily: 'Rubik-Regular',
+    color: '#475569',
+    fontFamily: 'Poppins-Regular',
+  },
+  rejectionBox: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: p(16),
+    padding: p(16),
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  rejectionText: {
+    color: '#DC2626',
+    fontSize: p(14),
+    fontFamily: 'Poppins-Medium',
+    lineHeight: p(22),
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: p(20),
+    marginTop: p(10),
+    gap: p(12),
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: p(12),
-    paddingVertical: p(12),
-    paddingHorizontal: p(20),
+    borderRadius: p(14),
+    paddingVertical: p(14),
     flex: 1,
-    marginHorizontal: p(5),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-    minHeight: p(45),
   },
   approveButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3660f9',
+    shadowColor: '#3660f9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   rejectButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
-  buttonText: {
+  approveButtonText: {
     color: '#fff',
     fontSize: p(14),
-    fontFamily: 'Montserrat-SemiBold',
-    marginLeft: p(8),
+    fontFamily: 'Poppins-Bold',
   },
-  deleteButton: {
-    padding: p(8),
-    backgroundColor: '#FFEBEE',
-    borderRadius: p(20),
+  rejectButtonText: {
+    color: '#EF0107',
+    fontSize: p(14),
+    fontFamily: 'Poppins-Bold',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: p(20),
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: p(20),
-    padding: p(20),
-    width: '90%',
-    maxWidth: p(400),
+    borderRadius: p(24),
+    padding: p(24),
+    width: '100%',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: p(10),
   },
   modalTitle: {
-    fontSize: p(20),
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#2c3e50',
-    marginBottom: p(8),
-    textAlign: 'center',
+    fontSize: p(18),
+    fontFamily: 'Poppins-Bold',
+    color: '#0F172A',
+    marginLeft: p(10),
   },
   modalSubtitle: {
-    fontSize: p(14),
-    color: '#666',
+    fontSize: p(13),
+    color: '#64748B',
     marginBottom: p(20),
-    textAlign: 'center',
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Regular',
+    lineHeight: p(20),
   },
   reasonInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: p(10),
-    padding: p(12),
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    borderRadius: p(12),
+    padding: p(14),
     fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
-    marginBottom: p(20),
-    minHeight: p(100),
+    fontFamily: 'Poppins-Regular',
+    marginBottom: p(24),
+    minHeight: p(120),
+    color: '#1E293B',
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: p(12),
   },
   modalButton: {
     flex: 1,
-    paddingVertical: p(12),
-    borderRadius: p(10),
-    marginHorizontal: p(5),
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-  },
-  cancelButtonText: {
-    color: '#666',
-  },
-  submitButton: {
-    backgroundColor: '#f44336',
-  },
-  modalButtonText: {
-    fontSize: p(14),
-    fontFamily: 'Montserrat-SemiBold',
-    textAlign: 'center',
-  },
-  rejectionBox: {
-    backgroundColor: '#FFEBEE',
-    borderLeftWidth: 4,
-    borderLeftColor: '#f44336',
-    padding: p(15),
-  },
-  rejectionText: {
-    color: '#f44336',
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
-    lineHeight: p(20),
-  },
-  successModalContent: {
-    alignItems: 'center',
-    paddingVertical: p(30),
-    paddingHorizontal: p(25),
-  },
-  successIconContainer: {
-    width: p(80),
-    height: p(80),
-    borderRadius: p(40),
-    backgroundColor: '#E8F5E9',
+    paddingVertical: p(14),
+    borderRadius: p(12),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: p(20),
   },
-  successTitle: {
-    color: '#4CAF50',
-    fontSize: p(24),
-    marginBottom: p(10),
+  cancelButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  successSubtitle: {
-    color: '#666',
-    fontSize: p(16),
-    textAlign: 'center',
-    lineHeight: p(24),
-    marginBottom: p(25),
+  cancelButtonText: {
+    color: '#475569',
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(14),
   },
-  successButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: p(15),
-    paddingHorizontal: p(30),
-    borderRadius: p(12),
-    minWidth: p(120),
+  submitButton: {
+    backgroundColor: '#EF4444',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: p(14),
+    fontFamily: 'Poppins-Bold',
+  },
 });
-

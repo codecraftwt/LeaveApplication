@@ -18,49 +18,50 @@ import {useFocusEffect} from '@react-navigation/native';
 import {TotalHoursReportModal} from './TotalHoursReportModal';
 import {RefreshControl} from 'react-native';
 
-const getCurrentWeek = () => {
-  const date = new Date();
+const getFinancialYearStartDate = (date) => {
   const year = date.getFullYear();
-  const startDate = new Date(year, 3, 1);
-  if (date < startDate) {
-    startDate.setFullYear(year - 1);
-  }
-  const days = Math.floor((date - startDate) / (24 * 60 * 60 * 1000));
-  return Math.ceil((days + 1) / 7);
+  return date.getMonth() < 3 ? year - 1 : year;
 };
 
-const getWeekRange = (weekNumber, currentYear) => {
-  let startYear = currentYear;
+const getWeek1StartDate = (financialYear) => {
+  // Financial year starts April 1st
+  const april1 = new Date(financialYear, 3, 1);
+  const day = april1.getDay(); // 0 = Sunday, 1 = Monday
+  const diff = day === 0 ? -6 : 1 - day; // Go back to Monday
+  return new Date(april1.getFullYear(), april1.getMonth(), april1.getDate() + diff);
+};
 
-  // Start date should be March 31
-  const startDate = new Date(currentYear, 2, 31); // March is 2 (0-based month index)
-
-  // If today's date is before March 31 of currentYear, shift back to previous year
-  if (new Date() < startDate) {
-    startYear -= 1;
+const getCurrentWeek = () => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const financialYear = getFinancialYearStartDate(today);
+  const week1Start = getWeek1StartDate(financialYear);
+  
+  // Use Math.round to safely avoid DST issues off-by-1-hour leading to off-by-1-day
+  let diffDays = Math.round((today - week1Start) / (24 * 60 * 60 * 1000));
+  
+  if (diffDays < 0) {
+    const prevWeek1 = getWeek1StartDate(financialYear - 1);
+    diffDays = Math.round((today - prevWeek1) / (24 * 60 * 60 * 1000));
   }
+  
+  return Math.floor(diffDays / 7) + 1;
+};
 
-  const daysToAdd = (weekNumber - 1) * 7;
-  const weekStartDate = new Date(
-    new Date(startYear, 2, 31).getTime() + daysToAdd * 24 * 60 * 60 * 1000,
-  );
-  const weekEndDate = new Date(
-    weekStartDate.getTime() + 6 * 24 * 60 * 60 * 1000,
-  );
-
-  const startFormatted = `${weekStartDate
-    .getDate()
-    .toString()
-    .padStart(2, '0')}-${(weekStartDate.getMonth() + 1)
-    .toString()
-    .padStart(2, '0')}-${weekStartDate.getFullYear()}`;
-  const endFormatted = `${weekEndDate.getDate().toString().padStart(2, '0')}-${(
-    weekEndDate.getMonth() + 1
-  )
-    .toString()
-    .padStart(2, '0')}-${weekEndDate.getFullYear()}`;
-
-  return `${startFormatted} to ${endFormatted}`;
+const getWeekRange = (weekNumber, financialYear) => {
+  const week1Start = getWeek1StartDate(financialYear);
+  
+  const weekStartDate = new Date(week1Start.getFullYear(), week1Start.getMonth(), week1Start.getDate() + (weekNumber - 1) * 7);
+  const weekEndDate = new Date(weekStartDate.getFullYear(), weekStartDate.getMonth(), weekStartDate.getDate() + 6);
+  
+  const format = (d) => {
+    const dd = d.getDate().toString().padStart(2, '0');
+    const mm = (d.getMonth() + 1).toString().padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+  
+  return `${format(weekStartDate)} to ${format(weekEndDate)}`;
 };
 
 export default function HoursReport() {
@@ -108,13 +109,13 @@ export default function HoursReport() {
   const WeekData = useMemo(() => {
     return Array.from({length: 52}, (_, i) => {
       const weekNumber = i + 1;
-      const weekRange = getWeekRange(weekNumber, 2025); // financial year 2025–2026
+      const weekRange = getWeekRange(weekNumber, financialYear); // dynamically use current financial year
       return {
         label: `Week ${weekNumber} (${weekRange})`,
         value: `${weekNumber}`,
       };
     });
-  }, []);
+  }, [financialYear]);
 
   const DayData = useMemo(() => {
     const daysOfWeek = [
@@ -369,26 +370,13 @@ export default function HoursReport() {
           </View>
           {Object.keys(groupedTeams).map((officeName, index) => {
             return (
-            <View key={index} style={{marginBottom: 20}}>
-              <View style={styles.reportContainer}>
-                <View style={styles.officeView}>
-                  <Text style={styles.officeTitle}>{officeName}</Text>
-                </View>
+              <View key={index} style={{marginBottom: 20}}>
+                <View style={styles.reportContainer}>
+                  <View style={styles.officeView}>
+                    <Text style={styles.officeTitle}>{officeName}</Text>
+                  </View>
 
-                <View style={[styles.reportHeader, {flexDirection: 'row'}]}>
-                  <Text
-                    style={[
-                      styles.reportHeaderText,
-                      {
-                        flex: 1,
-                        textAlign: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: '#fff',
-                      },
-                    ]}>
-                    Team
-                  </Text>
-                  {!isBeforeCurrentWeek && (
+                  <View style={[styles.reportHeader, {flexDirection: 'row'}]}>
                     <Text
                       style={[
                         styles.reportHeaderText,
@@ -396,68 +384,103 @@ export default function HoursReport() {
                           flex: 1,
                           textAlign: 'center',
                           borderRightWidth: 1,
-                          borderRightColor: '#fff',
+                          borderRightColor: '#4F75FF',
                         },
                       ]}>
-                      Today's Hours
+                      Team
                     </Text>
-                  )}
-                  <Text
-                    style={[
-                      styles.reportHeaderText,
-                      {
-                        flex: 1,
-                        textAlign: 'center',
-                      },
-                    ]}>
-                    Weekly Hours
-                  </Text>
-                </View>
-
-                {groupedTeams[officeName]?.map((team, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={[
-                      styles.teamReportRow,
-                      {
-                        flexDirection: 'row',
-                        borderBottomWidth: p(1),
-                        borderBottomColor: '#fff',
-                        backgroundColor: idx % 2 === 0 ? '#F1F1F1' : '#FFFFFF',
-                      },
-                      team.name === 'Branch Total' && styles.branchTotalRow,
-                      team.name === 'Global Total' && styles.globalTotalRow,
-                    ]}
-                    onPress={() => handleRowPress(team)}>
-                    <View
-                      style={[
-                        styles.reportColumn,
-                        {
-                          flex: 1,
-                          borderRightWidth: p(1),
-                          borderRightColor: '#fff',
-                        },
-                      ]}>
+                    {!isBeforeCurrentWeek && (
                       <Text
                         style={[
-                          styles.teamReportNameText,
+                          styles.reportHeaderText,
                           {
+                            flex: 1,
                             textAlign: 'center',
+                            borderRightWidth: 1,
+                            borderRightColor: '#4F75FF',
                           },
                         ]}>
-                        {team?.team_name}
+                        Today's Hours
                       </Text>
-                    </View>
+                    )}
+                    <Text
+                      style={[
+                        styles.reportHeaderText,
+                        {
+                          flex: 1,
+                          textAlign: 'center',
+                        },
+                      ]}>
+                      Weekly Hours
+                    </Text>
+                  </View>
 
-                    {/* Conditionally render Today's Hours column */}
-                    {!isBeforeCurrentWeek && (
+                  {groupedTeams[officeName]?.map((team, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[
+                        styles.teamReportRow,
+                        {
+                          backgroundColor: idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC',
+                          borderBottomWidth: 1,
+                          borderBottomColor: '#F1F5F9',
+                        },
+                        team.name === 'Branch Total' && styles.branchTotalRow,
+                        team.name === 'Global Total' && styles.globalTotalRow,
+                      ]}
+                      onPress={() => handleRowPress(team)}>
                       <View
                         style={[
                           styles.reportColumn,
                           {
                             flex: 1,
-                            borderRightWidth: p(1),
-                            borderRightColor: '#fff',
+                            borderRightWidth: 1,
+                            borderRightColor: '#F1F5F9',
+                            justifyContent: 'center',
+                            paddingHorizontal: p(4),
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.teamReportNameText,
+                            {
+                              textAlign: 'center',
+                            },
+                          ]}>
+                          {team?.team_name}
+                        </Text>
+                      </View>
+
+                      {/* Conditionally render Today's Hours column */}
+                      {!isBeforeCurrentWeek && (
+                        <View
+                          style={[
+                            styles.reportColumn,
+                            {
+                              flex: 1,
+                              borderRightWidth: 1,
+                              borderRightColor: '#F1F5F9',
+                              justifyContent: 'center',
+                            },
+                          ]}>
+                          <Text
+                            style={[
+                              styles.teamReportTotalText,
+                              {
+                                textAlign: 'center',
+                              },
+                            ]}>
+                            {team?.total_todays_hours || 0}
+                          </Text>
+                        </View>
+                      )}
+
+                      <View
+                        style={[
+                          styles.reportColumn,
+                          {
+                            flex: 1,
+                            justifyContent: 'center',
                           },
                         ]}>
                         <Text
@@ -467,7 +490,67 @@ export default function HoursReport() {
                               textAlign: 'center',
                             },
                           ]}>
-                          {team?.total_todays_hours || 0}
+                          {team?.total_hours}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+
+                  <TouchableOpacity
+                    style={[
+                      styles.reportRow,
+                      {
+                        backgroundColor: '#FFF5EC',
+                      },
+                    ]}
+                    onPress={() => handleTotalRowPress(officeName)}>
+                    <View
+                      style={[
+                        {
+                          flex: 1,
+                          borderRightWidth: 1,
+                          borderRightColor: '#FFE4CC',
+                          justifyContent: 'center',
+                        },
+                      ]}>
+                      <Text
+                        style={[
+                          styles.branchReportText,
+                          {
+                            textAlign: 'center',
+                          },
+                        ]}>
+                        Branch Total
+                      </Text>
+                    </View>
+
+                    {/* Conditionally remove Today's Hours total */}
+                    {!isBeforeCurrentWeek && (
+                      <View
+                        style={[
+                          styles.reportColumn,
+                          {
+                            flex: 1,
+                            borderRightWidth: 1,
+                            borderRightColor: '#FFE4CC',
+                            justifyContent: 'center',
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.branchReporttotalText,
+                            {
+                              textAlign: 'center',
+                            },
+                          ]}>
+                          {groupedTeams[officeName]
+                            ?.filter(team => team?.name !== 'Branch Total')
+                            .reduce(
+                              (sum, team) =>
+                                sum + parseFloat(team?.total_todays_hours || 0),
+                              0,
+                            )
+                            .toFixed(2)}
                         </Text>
                       </View>
                     )}
@@ -477,60 +560,7 @@ export default function HoursReport() {
                         styles.reportColumn,
                         {
                           flex: 1,
-                          borderRightWidth: p(1),
-                          borderRightColor: '#fff',
-                        },
-                      ]}>
-                      <Text
-                        style={[
-                          styles.teamReportTotalText,
-                          {
-                            textAlign: 'center',
-                          },
-                        ]}>
-                        {team?.total_hours}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity
-                  style={[
-                    styles.reportRow,
-                    {
-                      flexDirection: 'row',
-                      backgroundColor: '#F5F5DB',
-                    },
-                  ]}
-                  onPress={() => handleTotalRowPress(officeName)}>
-                  <View
-                    style={[
-                      {
-                        flex: 1,
-                        borderRightWidth: p(1),
-                        borderRightColor: '#fff',
-                      },
-                    ]}>
-                    <Text
-                      style={[
-                        styles.branchReportText,
-                        {
-                          textAlign: 'center',
-                        },
-                      ]}>
-                      Branch Total
-                    </Text>
-                  </View>
-
-                  {/* Conditionally remove Today's Hours total */}
-                  {!isBeforeCurrentWeek && (
-                    <View
-                      style={[
-                        styles.reportColumn,
-                        {
-                          flex: 1,
-                          borderRightWidth: p(1),
-                          borderRightColor: '#fff',
+                          justifyContent: 'center',
                         },
                       ]}>
                       <Text
@@ -544,56 +574,28 @@ export default function HoursReport() {
                           ?.filter(team => team?.name !== 'Branch Total')
                           .reduce(
                             (sum, team) =>
-                              sum + parseFloat(team?.total_todays_hours || 0),
+                              sum + parseFloat(team?.total_hours || 0),
                             0,
                           )
                           .toFixed(2)}
                       </Text>
                     </View>
-                  )}
-
-                  <View
-                    style={[
-                      styles.reportColumn,
-                      {
-                        flex: 1,
-                        borderRightWidth: p(1),
-                        borderRightColor: '#fff',
-                      },
-                    ]}>
-                    <Text
-                      style={[
-                        styles.branchReporttotalText,
-                        {
-                          textAlign: 'center',
-                        },
-                      ]}>
-                      {groupedTeams[officeName]
-                        ?.filter(team => team?.name !== 'Branch Total')
-                        .reduce(
-                          (sum, team) =>
-                            sum + parseFloat(team?.total_hours || 0),
-                          0,
-                        )
-                        .toFixed(2)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          );
+            );
           })}
 
           <TouchableOpacity onPress={() => handleGrandTotalRowPress()}>
             <View style={styles.grandContainer}>
               <Text
                 style={[
-                  styles.reportHeaderText,
+                  styles.grandTotalText,
                   {
                     flex: 1,
                     textAlign: 'center',
-                    borderRightWidth: p(1),
-                    borderRightColor: '#fff',
+                    borderRightWidth: 1,
+                    borderRightColor: '#334155',
                   },
                 ]}>
                 Grand Total
@@ -601,12 +603,12 @@ export default function HoursReport() {
               {!isBeforeCurrentWeek && (
                 <Text
                   style={[
-                    styles.reportHeaderText,
+                    styles.grandTotalValue,
                     {
                       flex: 1,
                       textAlign: 'center',
-                      borderRightWidth: p(1),
-                      borderRightColor: '#fff',
+                      borderRightWidth: 1,
+                      borderRightColor: '#334155',
                     },
                   ]}>
                   {TodaysGrandTotal}
@@ -614,7 +616,7 @@ export default function HoursReport() {
               )}
               <Text
                 style={[
-                  styles.reportHeaderText,
+                  styles.grandTotalValue,
                   {
                     flex: 1,
                     textAlign: 'center',
@@ -649,185 +651,205 @@ export default function HoursReport() {
 const styles = StyleSheet.create({
   main: {
     flex: 1,
-    backgroundColor: '#3660f9',
+    backgroundColor: '#F8FAFC',
   },
   sub: {
     flex: 1,
-    padding: p(20),
-    backgroundColor: '#ffffff',
-
+    paddingHorizontal: p(16),
+    paddingTop: p(10),
   },
   title: {
-    fontSize: p(16),
-    fontFamily: 'Montserrat-SemiBold',
-    marginBottom: p(24),
-    color: '#000',
+    fontSize: p(20),
+    fontFamily: 'Poppins-Bold',
+    marginBottom: p(20),
+    color: '#1E293B',
   },
   dropdownContainer: {
     marginBottom: p(20),
   },
   dropdownRow: {
-    marginBottom: p(15),
+    marginBottom: p(16),
   },
   dropdownLabel: {
-    fontSize: p(16),
-    fontFamily: 'Rubik-Regular',
-    marginBottom: p(10),
-    color: '#000',
-    fontWeight: 600,
-  },
-  dropdownButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: p(8),
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
-    paddingHorizontal: p(15),
-    paddingVertical: p(10),
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dropdownButtonText: {
-    color: '#333',
-    fontSize: p(16),
-  },
-  dropdownArrow: {
-    fontSize: p(18),
-    color: '#333',
-  },
-  dropdownItem: {
-    padding: 15,
-    borderBottomWidth: p(1),
-    borderBottomColor: '#DDDDDD',
-  },
-  dropdownItemSelected: {
-    backgroundColor: '#E0E0E0',
-  },
-  dropdownItemText: {
-    fontSize: p(16),
-    color: '#333',
-  },
-  dropdownMenu: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: p(8),
-    borderWidth: p(1),
-    borderColor: '#DDDDDD',
-    marginTop: p(5),
+    fontSize: p(14),
+    fontFamily: 'Poppins-SemiBold',
+    marginBottom: p(8),
+    color: '#1E293B',
   },
   reportContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: p(15),
+    borderRadius: p(16),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
   },
   grandContainer: {
-    backgroundColor: '#3660F9',
-    borderRadius: p(8),
-    padding: 15,
-    borderWidth: p(1),
-    borderColor: '#DDDDDD',
+    backgroundColor: '#1E293B',
+    borderRadius: p(16),
+    padding: p(16),
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: p(10),
-    borderBottomWidth: 1,
+    marginBottom: p(40),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   reportHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderBottomColor: '#DDDDDD',
-    paddingVertical: p(10),
-    marginBottom: p(5),
-    backgroundColor: '#E97C1F',
-    borderRadius: p(5),
+    backgroundColor: '#3660f9',
+    paddingVertical: p(12),
   },
   reportHeaderText: {
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
-    color: '#fff',
+    fontSize: p(12),
+    fontFamily: 'Poppins-Bold',
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+  },
+  grandTotalText: {
+    fontSize: p(15),
+    fontFamily: 'Poppins-Bold',
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+  },
+  grandTotalValue: {
+    fontSize: p(15),
+    fontFamily: 'Poppins-Bold',
+    color: '#38BDF8',
   },
   teamReportRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: p(10),
+    paddingVertical: p(14),
   },
   reportRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: p(10),
+    paddingVertical: p(14),
   },
-
   branchTotalRow: {},
   globalTotalRow: {},
   inputDrop: {
-    paddingVertical: p(15),
-    paddingHorizontal: p(10),
-    backgroundColor: '#f7f7f7',
-    borderRadius: p(10),
-    shadowColor: '#000000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
+    paddingVertical: p(12),
+    paddingHorizontal: p(16),
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(12),
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
   selectedTextStyle: {
-    color: '#4D4D4D',
-    // backgroundColor:"#FFFFE0",
+    color: '#1E293B',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(15),
   },
   dropContainerStyle: {
-    borderColor: '#4D4D4D',
-
-    borderRadius: p(15),
-    borderWidth: p(2),
+    borderColor: '#E2E8F0',
+    borderRadius: p(12),
+    borderWidth: 1,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   itemTextStyle: {
-    color: '#4D4D4D',
-    fontWeight: '400',
+    color: '#334155',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(15),
   },
   placeholderStyle: {
-    color: '#999',
+    color: '#94A3B8',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(15),
   },
   searchStyle: {
-    color: '#4D4D4D',
-    fontWeight: '600',
-    fontFamily: 'Montserrat-Bold',
+    color: '#1E293B',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(15),
+  },
+  officeView: {
+    paddingHorizontal: p(16),
+    paddingVertical: p(14),
+    backgroundColor: '#F1F5F9',
+    borderBottomWidth: 1,
+    borderColor: '#E2E8F0',
   },
   officeTitle: {
-    fontFamily: 'Montserrat-Bold',
-    fontSize: p(18),
-    fontWeight: 600,
-    color: '#333333',
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(15),
+    color: '#1E293B',
+    textTransform: 'uppercase',
   },
   teamReportTotalText: {
     fontSize: p(14),
-    color: '#000',
+    fontFamily: 'Poppins-Medium',
+    color: '#1E293B',
   },
   teamReportNameText: {
     fontSize: p(13),
-    color: '#000',
-    fontFamily: 'Rubik-Regular',
-  },
-  branchReporttotalText: {
-    color: '#000000',
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
+    color: '#475569',
   },
   branchReportText: {
-    color: '#000',
     fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Bold',
+    color: '#E97C1F',
   },
-  grandReportText: {
-    fontWeight: 'bold',
-    color: '#000000',
-    fontSize: p(16),
+  branchReporttotalText: {
+    fontSize: p(14),
+    fontFamily: 'Poppins-Bold',
+    color: '#E97C1F',
   },
-  officeView: {
-    marginBottom: p(10),
-    backgroundColor: '#D3D3D3',
+  ClearFilter: {
     alignItems: 'center',
-    paddingVertical: p(7),
+    justifyContent: 'center',
+  },
+  clearFilterButton: {
+    backgroundColor: '#FFF5EC',
+    paddingHorizontal: p(12),
+    paddingVertical: p(6),
     borderRadius: p(8),
   },
-  officeTitle: {
+  clearFilterText: {
+    color: '#E97C1F',
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(13),
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  loadingText: {
+    marginTop: p(10),
     fontSize: p(16),
-    color: '#333',
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
+    color: '#334155',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  errorText: {
+    fontSize: p(16),
+    fontFamily: 'Poppins-Medium',
+    color: '#e74c3c',
+    textAlign: 'center',
   },
   itemContainer: {
     padding: 10,
@@ -835,60 +857,23 @@ const styles = StyleSheet.create({
   },
   selectedItemContainer: {
     backgroundColor: '#3660f9',
-    color: '#fff',
   },
   itemText: {
     color: '#3f3f3f',
     fontSize: 16,
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Regular',
   },
   selectedItemText: {
     color: '#fff',
     fontSize: 16,
-    fontFamily: 'Montserrat-SemiBold',
-  },
-  ClearFilter: {
-    marginBottom: p(10),
-    backgroundColor: '#e74c3c',
-    borderRadius: p(5),
-    paddingVertical: 3,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  clearFilterText: {
-    color: '#fff',
-    fontSize: p(14),
-    fontFamily: 'Rubik-Regular',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  loadingText: {
-    marginTop: p(10),
-    fontSize: p(16),
-    color: '#333',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  errorText: {
-    fontSize: p(16),
-    color: '#e74c3c',
-    textAlign: 'center',
+    fontFamily: 'Poppins-Medium',
   },
   debugContainer: {
     backgroundColor: '#f0f0f0',
     borderRadius: p(10),
     padding: p(15),
     marginBottom: p(20),
-    borderWidth: p(1),
+    borderWidth: 1,
     borderColor: '#ccc',
   },
   debugText: {
@@ -909,6 +894,6 @@ const styles = StyleSheet.create({
     fontSize: p(16),
     color: '#555',
     textAlign: 'center',
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
   },
 });

@@ -79,7 +79,7 @@ export const getUser = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const res = await api.get(`/get-user/${userId}`);
-      console.log('res---------------->', res.data);
+      // console.log('res---------------->', res.data);
       return res.data.data; // Only return the user object
     } catch (error) {
       return rejectWithValue(

@@ -11,32 +11,37 @@ export default function LeaveInfo({ showViewButton = true }) {
   const pending = dashboard?.remaining_leaves || 0;
   const navigation = useNavigation();
 
-
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Leave Information</Text>
         {showViewButton && (
-          <TouchableOpacity style={styles.viewBtn} onPress={() => navigation.navigate('My Leaves')}>
-            <Text style={styles.viewText}>View</Text>
-            <Feather
-              name="eye"
-              size={p(16)}
-              color="#3360f9"
-              style={{ marginLeft: p(4) }}
-            />
+          <TouchableOpacity style={styles.viewBtn} onPress={() => navigation.navigate('My Leaves')} activeOpacity={0.7}>
+            <Text style={styles.viewText}>View all</Text>
           </TouchableOpacity>
         )}
       </View>
-      <View style={styles.card}>
-        <View style={styles.col}>
-          <Text style={styles.value}>{taken}</Text>
-          <Text style={styles.label}>Current Year{"\n"}Taken Leaves</Text>
+      <View style={styles.cardsRow}>
+        {/* Taken Leaves Card */}
+        <View style={[styles.card, { backgroundColor: '#FF6B6B', borderColor: '#FF6B6B' }]}>
+          <View style={[styles.iconWrap, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+            <Feather name="calendar" size={p(16)} color="#FFFFFF" />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={[styles.value, { color: '#FFFFFF' }]}>{taken}</Text>
+            <Text style={[styles.label, { color: 'rgba(255, 255, 255, 0.9)' }]} numberOfLines={1} adjustsFontSizeToFit>Taken Leaves</Text>
+          </View>
         </View>
-        <View style={styles.divider} />
-        <View style={styles.col}>
-          <Text style={styles.value}>{pending}</Text>
-          <Text style={styles.label}>Total{"\n"}Pending Leaves</Text>
+
+        {/* Pending Leaves Card */}
+        <View style={[styles.card, { backgroundColor: '#10B981', borderColor: '#10B981' }]}>
+          <View style={[styles.iconWrap, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+            <Feather name="clock" size={p(16)} color="#FFFFFF" />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={[styles.value, { color: '#FFFFFF' }]}>{pending}</Text>
+            <Text style={[styles.label, { color: 'rgba(255, 255, 255, 0.9)' }]} numberOfLines={1} adjustsFontSizeToFit>Pending Leaves</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -45,66 +50,77 @@ export default function LeaveInfo({ showViewButton = true }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: p(10),
+    marginBottom: p(16),
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: p(6),
+    marginBottom: p(10),
     paddingHorizontal: p(2),
   },
   title: {
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(15),
-    color: '#222',
+    fontSize: p(16),
+    color: '#0F172A',
   },
   viewBtn: {
-    flexDirection: 'row',
+    backgroundColor: '#EFF6FF',
+    borderRadius: p(20),
+    paddingVertical: p(4),
+    paddingHorizontal: p(12),
     alignItems: 'center',
+    justifyContent: 'center',
   },
   viewText: {
-    color: '#3360f9',
+    color: '#3B82F6',
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(13),
+    fontSize: p(12),
+  },
+  cardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: p(12),
   },
   card: {
-    backgroundColor: '#3360f9',
-    borderRadius: p(14),
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    paddingVertical: p(16),
+    paddingHorizontal: p(16),
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: p(10),
-    paddingHorizontal: p(16),
-    justifyContent: 'space-between',
-    minHeight: p(60),
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#64748B',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  col: {
-    flex: 1,
+  iconWrap: {
+    width: p(36),
+    height: p(36),
+    borderRadius: p(10),
+    justifyContent: 'center',
     alignItems: 'center',
+    marginRight: p(12),
+  },
+  textWrap: {
+    flex: 1,
+    justifyContent: 'center',
   },
   value: {
-    color: '#fff',
-    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
+    fontFamily: 'Montserrat-Bold',
     fontSize: p(22),
-    marginBottom: p(1),
+    lineHeight: p(26),
   },
   label: {
-    color: '#fff',
-    fontFamily: 'Poppins-Regular',
-    fontSize: p(12),
-    textAlign: 'center',
-    opacity: 0.9,
-    lineHeight: p(15),
-  },
-  divider: {
-    width: 1,
-    height: p(32),
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    marginHorizontal: p(14),
+    color: '#64748B',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(11),
+    marginTop: p(2),
   },
 });
+

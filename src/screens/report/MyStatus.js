@@ -17,7 +17,6 @@ import Feather from 'react-native-vector-icons/Feather';
 import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import { getEmployeeStatus } from '../../redux/slices/employeeanalyticsSlice';
-import { TouchableWithoutFeedback } from 'react-native';
 import { p } from '../../utils/Responsive';
 import CustomeLoadingIndicator from '../../components/CustomeLoadingIndicator';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -34,11 +33,10 @@ const MyStatus = () => {
   const [tempDate, setTempDate] = useState(new Date());
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showFilterData, setShowFilterData] = useState(false);
-  const [lastAnalaytics, setlastanalytics] = useState(true); // Set initial to true
+  const [lastAnalaytics, setlastanalytics] = useState(true);
   const dashboard = useSelector(state => state.auth.dashboard);
 
   const dispatch = useDispatch();
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,8 +44,6 @@ const MyStatus = () => {
     if (user?.id) {
       const apiFromDate = fromDate;
       const apiToDate = toDate;
-
-      console.log('Initial API Dates:', apiFromDate, apiToDate);
 
       dispatch(
         getEmployeeStatus({
@@ -66,29 +62,26 @@ const MyStatus = () => {
   );
 
   function parseDMY(str) {
+    if (!str) return new Date();
     const [d, m, y] = str.split('-');
     return new Date(`${y}-${m}-${d}`);
   }
-  function formatDMY(date) {
-    return `${date.getDate().toString().padStart(2, '0')}-${(
-      date.getMonth() + 1
-    )
-      .toString()
-      .padStart(2, '0')}-${date.getFullYear()}`;
-  }
+
   const openDatePicker = field => {
     setDateField(field);
-    // Convert DD-MM-YYYY to Date object
     const dateString = field === 'from' ? fromDate : toDate;
-    const [day, month, year] = dateString.split('-');
-    setTempDate(new Date(year, month - 1, day));
+    if (dateString) {
+      const [day, month, year] = dateString.split('-');
+      setTempDate(new Date(year, month - 1, day));
+    } else {
+      setTempDate(new Date());
+    }
     setShowDatePicker(true);
   };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      // Format to DD-MM-YYYY
       const day = String(selectedDate.getDate()).padStart(2, '0');
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const year = selectedDate.getFullYear();
@@ -98,12 +91,9 @@ const MyStatus = () => {
     }
   };
 
-  const closeDatePicker = () => {
-    setShowDatePicker(false);
-  };
-
   const [formattedFromDate, setFormattedFromDate] = useState('');
   const [formattedToDate, setFormattedToDate] = useState('');
+  
   const openfilter = () => {
     setIsModalVisible(true);
   };
@@ -121,13 +111,12 @@ const MyStatus = () => {
     9: 'Team Leader Approved',
     10: 'Team Leader Rejected',
   };
-  //apply filter function
+
   const applyFilter = () => {
     if (fromDate && toDate && user?.id) {
       setFormattedFromDate(fromDate);
       setFormattedToDate(toDate);
 
-      // Use dates directly (already in DD-MM-YYYY)
       dispatch(
         getEmployeeStatus({
           empId: user.id,
@@ -142,7 +131,6 @@ const MyStatus = () => {
     }
   };
 
-  // cleare filter function
   const clearFilter = () => {
     setFormattedFromDate('');
     setFormattedToDate('');
@@ -167,445 +155,312 @@ const MyStatus = () => {
     setlastanalytics(true);
   };
 
+  const getStatusColorBetter = (statusStr) => {
+    if (statusStr === '0') return { bg: '#FEF3C7', text: '#D97706' }; // Amber
+    if (['5', '6', '7', '8', '10'].includes(statusStr)) return { bg: '#FEF2F2', text: '#EF4444' }; // Red
+    if (['1', '2', '3', '4', '9'].includes(statusStr)) return { bg: '#ECFDF5', text: '#10B981' }; // Green
+    return { bg: '#F1F5F9', text: '#64748B' };
+  };
+
+  const getShortStatus = (statusStr) => {
+    const map = {
+      '0': 'P', '1': 'MA', '2': 'CTOA', '3': 'SAA', '4': 'HRA',
+      '5': 'MR', '6': 'CR', '7': 'SAR', '8': 'HRR', '9': 'TLA', '10': 'TLR'
+    };
+    return map[statusStr] || 'Null';
+  };
+
   const renderItem = ({ item, index }) => {
     const fullDateTime = item?.in_time;
-    const time = fullDateTime ? moment(fullDateTime).format('h:mm A') : '';
+    const time = fullDateTime ? moment(fullDateTime).format('h:mm A') : '-';
 
     const out = item?.out_time;
-    const outtime = out ? moment(out).format('h:mm A') : '';
+    const outtime = out ? moment(out).format('h:mm A') : '-';
+
+    const statusStr = item.status.toString().trim();
+    const statusColor = getStatusColorBetter(statusStr);
 
     return (
       <TouchableOpacity
         style={[
-          styles.card,
-          {
-            backgroundColor: index % 2 === 0 ? '#e7f0fc' : '#F9F9F9',
-          },
+          styles.tableRow,
+          { backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }
         ]}
         onPress={() => setSelectedEmployee(item)}
+        activeOpacity={0.7}
       >
-        <Text style={styles.mainText}>{index + 1}</Text>
-
-        <Text style={styles.mainText}>
-          {item?.status_date
-            ? moment(item.status_date).format('DD-MM-YYYY')
-            : ''}
+        <Text style={[styles.tableCell, styles.colId]}>{index + 1}</Text>
+        <Text style={[styles.tableCell, styles.colDate]}>
+          {item?.status_date ? moment(item.status_date).format('DD-MM-YYYY') : '-'}
         </Text>
-
-        <Text style={styles.mainText}>{time}</Text>
-        <Text style={styles.mainText}>{outtime}</Text>
-        <Text
-          style={[
-            styles.statusText,
-            {
-              backgroundColor: ['0', '5', '6', '7', '8', '10'].includes(
-                item.status.toString().trim(),
-              )
-                ? '#ff9633'
-                : ['1', '2', '3', '4', '9'].includes(
-                    item.status.toString().trim(),
-                  )
-                ? '#4CAF50'
-                : '#FF0000',
-            },
-            {
-              fontSize: p(14),
-              fontFamily: 'Poppins-SemiBold',
-              color: '#fff',
-            },
-          ]}
-        >
-          {/* {console.log('Item Status:', item.status)} {} */}
-          {item.status.toString().trim() === '0'
-            ? 'P'
-            : item.status.toString().trim() === '1'
-            ? 'MA'
-            : item.status.toString().trim() === '2'
-            ? 'CTOA'
-            : item.status.toString().trim() === '3'
-            ? 'SAA'
-            : item.status.toString().trim() === '4'
-            ? 'HRA'
-            : item.status.toString().trim() === '5'
-            ? 'MR'
-            : item.status.toString().trim() === '6'
-            ? 'CR'
-            : item.status.toString().trim() === '7'
-            ? 'SAR'
-            : item.status.toString().trim() === '8'
-            ? 'HRR'
-            : item.status.toString().trim() === '9'
-            ? 'TLA'
-            : item.status.toString().trim() === '10'
-            ? 'TLR'
-            : 'Null'}
-        </Text>
+        <Text style={[styles.tableCell, styles.colIn]}>{time}</Text>
+        <Text style={[styles.tableCell, styles.colOut]}>{outtime}</Text>
+        
+        <View style={[styles.tableCell, styles.colStatus, { alignItems: 'center' }]}>
+          <View style={[styles.statusBadgeMini, { backgroundColor: statusColor.bg }]}>
+            <Text style={[styles.statusBadgeMiniText, { color: statusColor.text }]}>
+              {getShortStatus(statusStr)}
+            </Text>
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };
 
   const renderHeader = () => (
-    <View style={styles.statusTableHeader}>
-      <Text style={[styles.statusHeaderCell, styles.colId]}>ID</Text>
-      <Text style={[styles.statusHeaderCell, styles.colDate]}>Date</Text>
-      <Text style={[styles.statusHeaderCell, styles.colIn]}>In</Text>
-      <Text style={[styles.statusHeaderCell, styles.colOut]}>Out</Text>
-      <Text style={[styles.statusHeaderCell, styles.colStatus]}>Status</Text>
+    <View style={styles.tableHeaderRow}>
+      <Text style={[styles.tableHeaderCell, styles.colId]}>ID</Text>
+      <Text style={[styles.tableHeaderCell, styles.colDate]}>Date</Text>
+      <Text style={[styles.tableHeaderCell, styles.colIn]}>In Time</Text>
+      <Text style={[styles.tableHeaderCell, styles.colOut]}>Out Time</Text>
+      <Text style={[styles.tableHeaderCell, styles.colStatus]}>Status</Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      
       <View style={styles.main}>
-        <StatusBar barStyle="light-content" backgroundColor="#3660f9" />
+        {/* Top Summary Bar */}
         <View style={styles.TopContainer}>
           <View style={styles.billabeBar}>
-            <Text style={styles.hoursText}>Current Month Billable hours</Text>
+            <View style={styles.billableTextWrap}>
+              <Text style={styles.hoursText}>Current Month Billable Hours</Text>
+            </View>
             <View style={styles.hoursContainer}>
               <Text style={styles.hoursCount}>
-                {Math.floor(dashboard?.current_month_hrs)}
+                {Math.floor(dashboard?.current_month_hrs || 0)}
               </Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.filter} onPress={openfilter}>
-            <Feather name="sliders" size={25} color={'#3360f9'} />
+          <TouchableOpacity style={styles.filterBtn} onPress={openfilter}>
+            <Feather name="sliders" size={p(22)} color={'#3660f9'} />
           </TouchableOpacity>
         </View>
 
         {showFilterData && (
           <View style={styles.dataContainer}>
             <View style={styles.dateRange}>
-              <Text style={styles.analyticsTitle}>Status Data From </Text>
-              <Text style={styles.analyticsTitle}>
+              <Text style={styles.analyticsTitleLabel}>Status Data From:</Text>
+              <Text style={styles.analyticsTitleValue}>
                 {formattedFromDate || '---'} TO {formattedToDate || '---'}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={clearFilter}
-              style={styles.clearFilterButton}
-            >
-              <Text style={styles.clearFilterText}>Clear Filter</Text>
+            <TouchableOpacity onPress={clearFilter} style={styles.clearFilterButton}>
+              <Feather name="x" size={p(16)} color="#FFFFFF" />
+              <Text style={styles.clearFilterText}>Clear</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {lastAnalaytics && (
-          <Text style={styles.analyticsTitle}>Last 15 Days Work Status :</Text>
+        {lastAnalaytics && !showFilterData && (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderTitle}>Last 15 Days Work Status</Text>
+          </View>
         )}
+
+        {/* Filter Modal */}
         <Modal
           visible={isModalVisible}
-          animationType="slide"
+          animationType="fade"
           onRequestClose={() => setIsModalVisible(false)}
           transparent={true}
+          statusBarTranslucent={true}
         >
           <TouchableOpacity
             style={styles.modalContainer}
             activeOpacity={1}
             onPress={() => setIsModalVisible(false)}
           >
-            <View style={styles.filtermodal}>
-              <View style={styles.showDate}>
-                <Text style={styles.text}>Select Date Range</Text>
+            <TouchableOpacity activeOpacity={1} style={styles.filtermodal}>
+              <View style={styles.modalHeaderRow}>
+                <Text style={styles.text}>Filter By Date</Text>
+                <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+                  <Feather name="x" size={p(24)} color="#94A3B8" />
+                </TouchableOpacity>
               </View>
 
               <View>
-                {/* From Date Picker */}
                 <View style={styles.datePicker}>
-                  <Text style={styles.labelStyle}>From Date:</Text>
-                  <TouchableOpacity
-                    style={styles.date}
-                    onPress={() => openDatePicker('from')}
-                  >
+                  <Text style={styles.labelStyle}>From Date</Text>
+                  <TouchableOpacity style={styles.dateBtn} onPress={() => openDatePicker('from')}>
                     <Text style={styles.dateText}>
-                      {fromDate
-                        ? moment(fromDate, 'DD-MM-YYYY').format('DD-MM-YYYY')
-                        : 'DD-MM-YYYY'}
+                      {fromDate ? moment(fromDate, 'DD-MM-YYYY').format('DD-MM-YYYY') : 'Select Date'}
                     </Text>
-                    <Icon
-                      name="calendar"
-                      size={25}
-                      color="#3660f9"
-                      style={{ textAlign: 'left' }}
-                    />
+                    <Feather name="calendar" size={p(20)} color="#3660f9" />
                   </TouchableOpacity>
                 </View>
 
-                {/* To Date Picker */}
                 <View style={styles.datePicker}>
-                  <Text style={styles.labelStyle}>To Date:</Text>
-                  <TouchableOpacity
-                    style={styles.date}
-                    onPress={() => openDatePicker('to')}
-                  >
+                  <Text style={styles.labelStyle}>To Date</Text>
+                  <TouchableOpacity style={styles.dateBtn} onPress={() => openDatePicker('to')}>
                     <Text style={styles.dateText}>
-                      {toDate
-                        ? moment(toDate, 'DD-MM-YYYY').format('DD-MM-YYYY')
-                        : 'DD-MM-YYYY'}
+                      {toDate ? moment(toDate, 'DD-MM-YYYY').format('DD-MM-YYYY') : 'Select Date'}
                     </Text>
-                    <Icon
-                      name="calendar"
-                      size={24}
-                      color="#3660f9"
-                      style={{ textAlign: 'left' }}
-                    />
+                    <Feather name="calendar" size={p(20)} color="#3660f9" />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* DateTime Picker */}
               {showDatePicker && (
                 <DateTimePicker
                   value={tempDate}
                   mode="date"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={handleDateChange}
-                  maximumDate={
-                    dateField === 'from' ? parseDMY(toDate) : undefined
-                  }
-                  minimumDate={
-                    dateField === 'to' ? parseDMY(fromDate) : undefined
-                  }
+                  maximumDate={dateField === 'from' && toDate ? parseDMY(toDate) : undefined}
+                  minimumDate={dateField === 'to' && fromDate ? parseDMY(fromDate) : undefined}
                 />
               )}
 
-              {/* Apply Button */}
               <TouchableOpacity style={styles.applybtn} onPress={applyFilter}>
-                <Text style={styles.applytext}>Apply</Text>
+                <Text style={styles.applytext}>Apply Filter</Text>
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </TouchableOpacity>
         </Modal>
 
         {loading ? (
           <CustomeLoadingIndicator />
         ) : (
-          <>
+          <View style={styles.tableWrapper}>
             {renderHeader()}
             <FlatList
-              style={styles.FlatList}
               data={employeeAnalytics?.slice().reverse()}
               renderItem={renderItem}
-              keyExtractor={item => item.id.toString()}
+              keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
               showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              ItemSeparatorComponent={() => <View style={styles.tableDivider} />}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>
-                    Your Status is not available
-                  </Text>
+                  <Feather name="inbox" size={p(40)} color="#CBD5E1" style={{ marginBottom: p(10) }} />
+                  <Text style={styles.emptyText}>No status available</Text>
                 </View>
               }
             />
-          </>
+          </View>
         )}
 
+        {/* Details Modal */}
         <Modal
           visible={!!selectedEmployee}
           animationType="slide"
           onRequestClose={() => setSelectedEmployee(null)}
+          statusBarTranslucent={true}
         >
-          <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-            <View style={styles.modalContent}>
-              {selectedEmployee && (
-                <>
-                  <View style={styles.modalHeader}>
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
-                    >
-                      <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={() => setSelectedEmployee(null)}
-                      >
-                        <Icon name="arrow-back" size={20} color={'#ffffff'} />
-                      </TouchableOpacity>
-                      <Text style={styles.modalHeaderText}>Work Status</Text>
-                    </View>
-                    <Image
-                      resizeMode="contain"
-                      style={styles.logoImage}
-                      source={require('../../assets/logozz.png')}
-                    />
-                  </View>
-                  <ScrollView style={styles.modalScrollView}>
-                    <View style={styles.modalBody}>
-                      <View style={styles.statusHeader}>
-                        <Text style={styles.statusLabel}>
-                          General Information
-                        </Text>
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            {
-                              backgroundColor:
-                                selectedEmployee?.status === '1' ||
-                                selectedEmployee?.status === '2' ||
-                                selectedEmployee?.status === '3' ||
-                                selectedEmployee?.status === '4' ||
-                                selectedEmployee?.status === '9'
-                                  ? '#E8F5E9'
-                                  : '#FFEBEE',
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.statusBadgeText,
-                              {
-                                color:
-                                  selectedEmployee?.status === '1' ||
-                                  selectedEmployee?.status === '2' ||
-                                  selectedEmployee?.status === '3' ||
-                                  selectedEmployee?.status === '4' ||
-                                  selectedEmployee?.status === '9'
-                                    ? '#4CAF50'
-                                    : '#F44336',
-                              },
-                            ]}
-                          >
-                            {statusLabels[selectedEmployee?.status] ||
-                              'Unknown Status'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.infoCard}>
-                        <View style={styles.infoRow}>
-                          <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Date</Text>
-                            <Text style={styles.infoValue}>
-                              {selectedEmployee?.in_time
-                                ? moment(selectedEmployee.in_time).format(
-                                    'DD-MM-YYYY',
-                                  )
-                                : '-'}
-                            </Text>
-                          </View>
-                          <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>In Time</Text>
-                            <Text style={styles.infoValue}>
-                              {selectedEmployee?.in_time
-                                ? moment(selectedEmployee.in_time).format(
-                                    'h:mm A',
-                                  )
-                                : '-'}
-                            </Text>
-                          </View>
-                        </View>
-                        <View style={styles.infoRow}>
-                          <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Out Time</Text>
-                            <Text style={styles.infoValue}>
-                              {selectedEmployee?.out_time
-                                ? moment(selectedEmployee.out_time).format(
-                                    'h:mm A',
-                                  )
-                                : '-'}
-                            </Text>
-                          </View>
-                          <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Total Hours</Text>
-                            <Text style={styles.infoValue}>
-                              {selectedEmployee?.total_worked_hrs || '-'}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-
-                      <View style={styles.statsContainer}>
-                        <View style={styles.statsCard}>
-                          <Text style={styles.statsLabel}>Available Hours</Text>
-                          <Text style={styles.statsValue}>
-                            {selectedEmployee?.total_avaiable_hrs || '0'}
-                          </Text>
-                        </View>
-                        <View style={styles.statsCard}>
-                          <Text style={styles.statsLabel}>Break Hours</Text>
-                          <Text style={styles.statsValue}>
-                            {selectedEmployee?.break_taken_hrs || '0'}
-                          </Text>
-                        </View>
-                        <View style={styles.statsCard}>
-                          <Text style={styles.statsLabel}>Billable Hours</Text>
-                          <Text style={styles.statsValue}>
-                            {selectedEmployee?.total_billable || '0'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <Text style={styles.sectionTitle}>Work Details</Text>
-                      {selectedEmployee?.empstatusdetails?.map(
-                        (statusDetail, index) => (
-                          <View key={index} style={styles.workCard}>
-                            <View style={styles.workHeader}>
-                              <View style={styles.workCategory}>
-                                <Text style={styles.categoryLabel}>
-                                  Category
-                                </Text>
-                                <Text style={styles.categoryValue}>
-                                  {statusDetail?.work_category === 1
-                                    ? 'Client'
-                                    : statusDetail?.work_category === 0
-                                    ? 'Study'
-                                    : 'None'}
-                                </Text>
-                              </View>
-                              <View
-                                style={[
-                                  styles.workType,
-                                  {
-                                    backgroundColor:
-                                      statusDetail.hour_type
-                                        .toString()
-                                        .trim() === '0'
-                                        ? '#FFEBEE'
-                                        : '#E8F5E9',
-                                  },
-                                ]}
-                              >
-                                <Text
-                                  style={[
-                                    styles.workTypeText,
-                                    {
-                                      color:
-                                        statusDetail.hour_type
-                                          .toString()
-                                          .trim() === '0'
-                                          ? '#F44336'
-                                          : '#4CAF50',
-                                    },
-                                  ]}
-                                >
-                                  {statusDetail.hour_type.toString().trim() ===
-                                  '0'
-                                    ? 'Offline'
-                                    : 'Billable'}
-                                </Text>
-                              </View>
-                            </View>
-                            <View style={styles.clientInfo}>
-                              <Text style={styles.clientName}>
-                                {statusDetail.client?.name || 'No Client'}
-                              </Text>
-                            </View>
-                            <View style={styles.workDetails}>
-                              <Text style={styles.workDetailsLabel}>
-                                Details
-                              </Text>
-                              <Text style={styles.workDetailsText}>
-                                {statusDetail.work_status}
-                              </Text>
-                            </View>
-                          </View>
-                        ),
-                      )}
-                    </View>
-                  </ScrollView>
-                </>
-              )}
+          <SafeAreaView style={styles.detailsModalContainer}>
+            <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
+            <View style={styles.detailsModalHeader}>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedEmployee(null)}>
+                <Feather name="arrow-left" size={p(22)} color="#3660f9" />
+              </TouchableOpacity>
+              <Text style={styles.modalHeaderText}>Work Status</Text>
             </View>
+
+            <ScrollView style={styles.modalScrollView} contentContainerStyle={{ paddingBottom: p(40) }}>
+              {selectedEmployee && (() => {
+                const modalStatusStr = selectedEmployee.status?.toString().trim();
+                const modalStatusColor = getStatusColorBetter(modalStatusStr);
+                
+                return (
+                <View style={styles.modalBody}>
+                  
+                  <View style={styles.infoCard}>
+                    <View style={styles.statusHeaderRow}>
+                      <Text style={styles.infoCardTitle}>General Information</Text>
+                      <View style={[styles.fullStatusBadge, { backgroundColor: modalStatusColor.bg }]}>
+                        <Text style={[styles.fullStatusBadgeText, { color: modalStatusColor.text }]}>
+                          {statusLabels[selectedEmployee.status] || 'Unknown Status'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.detailGrid}>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Date</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedEmployee.in_time ? moment(selectedEmployee.in_time).format('DD-MM-YYYY') : '-'}
+                        </Text>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Total Hours</Text>
+                        <Text style={styles.detailValue}>{selectedEmployee.total_worked_hrs || '-'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.detailGrid}>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>In Time</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedEmployee.in_time ? moment(selectedEmployee.in_time).format('h:mm A') : '-'}
+                        </Text>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Out Time</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedEmployee.out_time ? moment(selectedEmployee.out_time).format('h:mm A') : '-'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.statsContainer}>
+                    <View style={styles.statsCard}>
+                      <Text style={styles.statsValue}>{selectedEmployee.total_avaiable_hrs || '0'}</Text>
+                      <Text style={styles.statsLabel}>Available Hrs</Text>
+                    </View>
+                    <View style={styles.statsCard}>
+                      <Text style={[styles.statsValue, { color: '#F59E0B' }]}>{selectedEmployee.break_taken_hrs || '0'}</Text>
+                      <Text style={styles.statsLabel}>Break Hrs</Text>
+                    </View>
+                    <View style={styles.statsCard}>
+                      <Text style={[styles.statsValue, { color: '#10B981' }]}>{selectedEmployee.total_billable || '0'}</Text>
+                      <Text style={styles.statsLabel}>Billable Hrs</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.sectionTitle}>Work Details</Text>
+                  {selectedEmployee.empstatusdetails && selectedEmployee.empstatusdetails.length > 0 ? (
+                    selectedEmployee.empstatusdetails.map((statusDetail, index) => (
+                      <View key={index} style={styles.workCard}>
+                        <View style={styles.workHeader}>
+                          <View style={styles.workCategory}>
+                            <Text style={styles.categoryLabel}>Category</Text>
+                            <Text style={styles.categoryValue}>
+                              {statusDetail.work_category === 1 ? 'Client' : statusDetail.work_category === 0 ? 'Study' : 'None'}
+                            </Text>
+                          </View>
+                          <View style={[styles.workTypeBadge, { backgroundColor: statusDetail.hour_type.toString().trim() === '0' ? '#FEF2F2' : '#ECFDF5' }]}>
+                            <Text style={[styles.workTypeText, { color: statusDetail.hour_type.toString().trim() === '0' ? '#EF4444' : '#10B981' }]}>
+                              {statusDetail.hour_type.toString().trim() === '0' ? 'Offline' : 'Billable'}
+                            </Text>
+                          </View>
+                        </View>
+                        
+                        <View style={styles.clientInfoBox}>
+                          <Text style={styles.clientLabel}>Client / Project</Text>
+                          <Text style={styles.clientName}>{statusDetail.client?.name || 'No Client'}</Text>
+                        </View>
+
+                        <View style={styles.workDetailsBox}>
+                          <Text style={styles.workDetailsLabel}>Details</Text>
+                          <Text style={styles.workDetailsText}>{statusDetail.work_status}</Text>
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.noWorkText}>No detailed work logs found.</Text>
+                  )}
+                </View>
+                );
+              })()}
+            </ScrollView>
           </SafeAreaView>
         </Modal>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -614,595 +469,493 @@ export default MyStatus;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#3360f9',
+    backgroundColor: '#F8FAFC',
   },
   main: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-    padding: p(15),
+    backgroundColor: '#F8FAFC',
   },
   TopContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: p(16),
+    paddingTop: p(16),
+    paddingBottom: p(12),
   },
   billabeBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: p(15),
-    paddingLeft: p(20),
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(14),
+    paddingLeft: p(16),
+    paddingRight: p(6),
+    paddingVertical: p(6),
     marginRight: p(12),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    borderLeftWidth: p(4),
-    borderLeftColor: '#3360f9',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF8A00',
+  },
+  billableTextWrap: {
+    flex: 1,
+    paddingRight: p(10),
   },
   hoursText: {
-    fontSize: p(13),
+    fontSize: p(12),
     fontFamily: 'Poppins-SemiBold',
-    color: '#333333',
-    flex: 1,
+    color: '#64748B',
   },
   hoursContainer: {
-    backgroundColor: '#E97C1F',
+    backgroundColor: '#FFF7ED',
     paddingHorizontal: p(14),
-    paddingVertical: p(5),
+    paddingVertical: p(8),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: p(12),
-    marginRight: p(12),
-    marginVertical: p(8),
+    borderRadius: p(10),
   },
   hoursCount: {
     fontSize: p(16),
     fontFamily: 'Poppins-Bold',
-    color: '#ffffff',
+    color: '#FF8A00',
   },
-  filter: {
-    padding: p(10),
+  filterBtn: {
+    width: p(48),
+    height: p(48),
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: p(12),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-
-  header: {
-    flexDirection: 'row',
-    backgroundColor: '#E97C1F',
-    paddingVertical: p(10),
-    borderRadius: p(5),
-    marginBottom: p(10),
-  },
-  headerText: {
-    flex: 1,
-    fontFamily: 'Rubik-Regular',
-    color: '#ffffff',
-    fontSize: p(14),
-    textAlign: 'left',
-    paddingLeft: p(10),
-  },
-  card: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: p(4),
-    marginVertical: p(5),
-    borderRadius: p(10),
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(14),
+    shadowColor: '#64748B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 5,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: '#E2E8F0',
   },
-  mainText: {
-    fontSize: p(13),
-    fontFamily: 'Poppins-Medium',
-    color: '#333333',
+  sectionHeader: {
+    paddingHorizontal: p(16),
+    paddingBottom: p(12),
+    paddingTop: p(8),
   },
-  modalContent: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: p(15),
-    justifyContent: 'space-between',
-    backgroundColor: '#3360f9',
-    paddingVertical: p(10),
-    borderBottomLeftRadius: p(20),
-    borderBottomRightRadius: p(20),
-  },
-  modalHeaderText: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: p(18),
-    color: '#ffffff',
-    marginLeft: p(15),
-  },
-  closeButton: {
-    padding: p(8),
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: p(8),
-  },
-  modalScrollView: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  modalBody: {
-    padding: p(15),
-    paddingTop: p(15),
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: p(15),
-    backgroundColor: '#fff',
-    padding: p(10),
-    borderRadius: p(10),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  statusLabel: {
+  sectionHeaderTitle: {
     fontSize: p(14),
     fontFamily: 'Poppins-Bold',
-    color: '#333',
-  },
-  statusBadge: {
-    paddingHorizontal: p(10),
-    paddingVertical: p(5),
-    borderRadius: p(15),
-  },
-  statusBadgeText: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-SemiBold',
-    paddingHorizontal: p(5),
-    paddingVertical: p(3),
-  },
-  statusText: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-SemiBold',
-    color: '#ffffff',
-    paddingVertical: p(6),
-    paddingHorizontal: p(10),
-    borderRadius: p(8),
-    minWidth: p(40),
-    textAlign: 'center',
-  },
-  pendingText: {
-    margin: p(8),
-    fontWeight: 'bold',
-    fontSize: p(14),
-    paddingHorizontal: p(8),
-    paddingVertical: p(4),
-  },
-  infoCard: {
-    backgroundColor: '#E7F2FF',
-    borderRadius: p(20),
-    padding: p(20),
-    marginBottom: p(25),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: '#3660f9',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: p(20),
-  },
-  infoItem: {
-    flex: 1,
-    marginHorizontal: p(6),
-    backgroundColor: '#f8f9fa',
-    padding: p(15),
-    borderRadius: p(15),
-    borderWidth: 0.7,
-    borderColor: '#3660f9',
-  },
-  infoLabel: {
-    fontSize: p(13),
-    fontFamily: 'Poppins-Medium',
-    color: '#666',
-    marginBottom: p(8),
-  },
-  infoValue: {
-    fontSize: p(16),
-    fontFamily: 'Poppins-Bold',
-    color: '#333',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: p(25),
-  },
-  statsCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: p(20),
-    padding: p(18),
-    marginHorizontal: p(6),
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-  statsLabel: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-Medium',
-    color: '#666',
-    marginBottom: p(8),
-    textAlign: 'center',
-  },
-  statsValue: {
-    fontSize: p(20),
-    fontFamily: 'Poppins-Bold',
-    color: '#3360f9',
-  },
-  sectionTitle: {
-    fontSize: p(16),
-    fontFamily: 'Poppins-Bold',
-    color: '#333',
-    marginBottom: p(10),
-    marginTop: p(10),
-    marginLeft: p(12),
-  },
-  workCard: {
-    backgroundColor: '#fff',
-    borderRadius: p(20),
-    padding: p(10),
-    marginBottom: p(20),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-  workHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: p(15),
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: p(15),
-  },
-  workCategory: {
-    flex: 1,
-  },
-  categoryLabel: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-Medium',
-    color: '#666',
-  },
-  categoryValue: {
-    fontSize: p(16),
-    fontFamily: 'Poppins-Bold',
-    color: '#333',
-  },
-  workType: {
-    paddingHorizontal: p(15),
-    paddingVertical: p(8),
-    borderRadius: p(25),
-  },
-  workTypeText: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-SemiBold',
-  },
-  clientInfo: {
-    marginBottom: p(15),
-    backgroundColor: '#e3f2fd',
-    padding: p(15),
-    borderRadius: p(15),
-    borderWidth: 1,
-    borderColor: '#bbdefb',
-  },
-  clientName: {
-    fontSize: p(16),
-    fontFamily: 'Poppins-Bold',
-    color: '#1976d2',
-  },
-  workDetails: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: p(15),
-    padding: p(15),
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  workDetailsLabel: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-Medium',
-    color: '#666',
-    marginBottom: p(8),
-  },
-  workDetailsText: {
-    fontSize: p(14),
-    fontFamily: 'Poppins-Regular',
-    color: '#333',
-    lineHeight: p(22),
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-  },
-  filtermodal: {
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: p(25),
-    padding: p(25),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  data: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: p(10),
-    marginHorizontal: p(10),
+    color: '#1E293B',
   },
   dataContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: p(15),
-    backgroundColor: '#e8f5e8',
-    borderRadius: p(15),
-    marginVertical: p(15),
+    padding: p(14),
+    backgroundColor: '#F0F4FF',
+    borderRadius: p(14),
+    marginHorizontal: p(16),
+    marginBottom: p(16),
     borderWidth: 1,
-    borderColor: '#c8e6c9',
+    borderColor: '#D8E2FF',
   },
-  dateText: {
-    fontSize: p(16),
-    color: '#333',
+  dateRange: {
+    flex: 1,
+  },
+  analyticsTitleLabel: {
+    fontSize: p(11),
+    color: '#3660f9',
     fontFamily: 'Poppins-SemiBold',
+    marginBottom: p(2),
   },
-  showDate: {
-    marginBottom: p(20),
-  },
-  text: {
-    fontSize: p(22),
-    fontFamily: 'Poppins-Bold',
-    color: '#333',
-  },
-  DatePicker: {
-    marginBottom: p(20),
-  },
-  datePicker: {
-    marginBottom: p(20),
-  },
-  labelStyle: {
-    fontSize: p(15),
-    fontFamily: 'Poppins-SemiBold',
-    color: '#333',
-    marginBottom: p(8),
-  },
-  date: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    paddingVertical: p(15),
-    paddingHorizontal: p(18),
-    borderRadius: p(15),
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-  },
-  applybtn: {
-    backgroundColor: '#3360f9',
-    paddingVertical: p(18),
-    borderRadius: p(15),
-    alignItems: 'center',
-    marginTop: p(10),
-    shadowColor: '#3360f9',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  applytext: {
-    color: '#fff',
-    fontSize: p(16),
+  analyticsTitleValue: {
+    fontSize: p(12),
+    color: '#1E293B',
     fontFamily: 'Poppins-Bold',
   },
   clearFilterButton: {
-    backgroundColor: '#ff6b6b',
-    borderRadius: p(10),
-    paddingVertical: p(8),
-    paddingHorizontal: p(18),
+    flexDirection: 'row',
+    backgroundColor: '#EF4444',
+    borderRadius: p(8),
+    paddingVertical: p(6),
+    paddingHorizontal: p(10),
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#ff6b6b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
   },
   clearFilterText: {
-    fontSize: p(13),
-    color: '#fff',
-    fontFamily: 'Poppins-SemiBold',
-  },
-  analyticsTitle: {
-    fontSize: p(13),
-    marginVertical: p(10),
-    color: '#333',
+    fontSize: p(11),
+    color: '#FFFFFF',
     fontFamily: 'Poppins-Bold',
-    backgroundColor: '#fff',
-    padding: p(10),
-    borderRadius: p(15),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    marginLeft: p(4),
+  },
+  tableWrapper: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: p(20),
+    borderTopRightRadius: p(20),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 10,
+    elevation: 4,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#F1F5F9',
+    marginHorizontal: p(2),
   },
-  dataTableCell1: {
-    fontSize: p(13),
-    color: '#000',
-    fontFamily: 'Rubik-Regular',
+  tableHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    paddingVertical: p(14),
+    paddingHorizontal: p(16),
+    borderTopLeftRadius: p(20),
+    borderTopRightRadius: p(20),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  dataTableCell11: {
-    fontSize: p(16),
-    color: '#333',
-    fontFamily: 'Rubik-Regular',
-  },
-  dataTableCell2: {
-    fontSize: p(13),
-    color: '#000',
-    fontFamily: 'Rubik-Regular',
-  },
-  dataTableCell22: {
-    fontSize: p(16),
-    color: '#3660f9',
+  tableHeaderCell: {
     fontFamily: 'Poppins-Bold',
+    color: '#64748B',
+    fontSize: p(11),
   },
   tableRow: {
-    paddingHorizontal: p(15),
-    paddingVertical: p(5),
-  },
-  statusIndividualContainer: {
-    backgroundColor: '#fff',
-    padding: 10,
-    marginBottom: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#f5f5f5',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  stetusdetails: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginBottom: 5,
-  },
-  statusinfo: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 0.8,
-    borderColor: '#3660f9',
+    alignItems: 'center',
+    paddingVertical: p(14),
+    paddingHorizontal: p(16),
+    backgroundColor: '#FFFFFF',
+  },
+  tableCell: {
+    fontSize: p(12),
+    color: '#1E293B',
+    fontFamily: 'Poppins-Medium',
+  },
+  tableDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+  },
+  listContent: {
+    paddingBottom: p(40),
+  },
+  colId: { flex: 0.6, textAlign: 'left' },
+  colDate: { flex: 1.4, textAlign: 'left' },
+  colIn: { flex: 1.1, textAlign: 'left' },
+  colOut: { flex: 1.1, textAlign: 'left' },
+  colStatus: { flex: 1, textAlign: 'center' },
+  
+  statusBadgeMini: {
+    paddingHorizontal: p(8),
+    paddingVertical: p(4),
+    borderRadius: p(6),
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: p(36),
+  },
+  statusBadgeMiniText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(10),
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: p(40),
     alignItems: 'center',
-    padding: p(30),
-    backgroundColor: '#fff',
-    borderRadius: p(20),
-    margin: p(15),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    justifyContent: 'center',
   },
   emptyText: {
-    fontSize: p(16),
-    color: '#666',
-    textAlign: 'center',
+    fontSize: p(14),
+    color: '#94A3B8',
     fontFamily: 'Poppins-Medium',
   },
-  row: {
+  
+  // Filter Modal
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    paddingHorizontal: p(20),
+  },
+  filtermodal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(24),
+    padding: p(24),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: p(8),
-  },
-  // --- Status Table Styles ---
-  statusTableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#E97C1F',
-    paddingVertical: p(7),
-    borderRadius: p(10),
-    marginBottom: p(10),
     alignItems: 'center',
-    paddingHorizontal: p(8),
-    shadowColor: '#3360f9',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    marginBottom: p(20),
   },
-  statusHeaderCell: {
-    color: '#fff',
+  text: {
+    fontSize: p(18),
     fontFamily: 'Poppins-Bold',
-    fontSize: p(12),
-    textAlign: 'left',
-    paddingLeft: p(6),
+    color: '#0F172A',
   },
-  statusTableRow: {
+  datePicker: {
+    marginBottom: p(16),
+  },
+  labelStyle: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-Medium',
+    color: '#64748B',
+    marginBottom: p(6),
+  },
+  dateBtn: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingVertical: p(14),
+    paddingHorizontal: p(16),
+    borderRadius: p(12),
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  dateText: {
+    fontSize: p(14),
+    color: '#1E293B',
+    fontFamily: 'Poppins-Medium',
+  },
+  applybtn: {
+    backgroundColor: '#3660f9',
+    paddingVertical: p(16),
+    borderRadius: p(14),
+    alignItems: 'center',
+    marginTop: p(10),
+    shadowColor: '#3660f9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  applytext: {
+    color: '#FFFFFF',
+    fontSize: p(15),
+    fontFamily: 'Poppins-Bold',
+  },
+  
+  // Details Modal
+  detailsModalContainer: {
+    flex: 1,
+    backgroundColor: '#3660f9',
+  },
+  detailsModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: p(10),
-    marginBottom: p(8),
-    paddingVertical: p(10),
-    paddingHorizontal: p(8),
-    shadowColor: '#000',
+    paddingTop: Platform.OS === 'ios' ? p(40) : p(45),
+    paddingBottom: p(16),
+    paddingHorizontal: p(16),
+    backgroundColor: '#3660f9',
+  },
+  closeButton: {
+    width: p(36),
+    height: p(36),
+    borderRadius: p(18),
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: p(12),
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modalHeaderText: {
+    flex: 1,
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(18),
+    color: '#FFFFFF',
+  },
+  modalScrollView: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  modalBody: {
+    padding: p(16),
+  },
+  infoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    padding: p(16),
+    marginBottom: p(20),
+    shadowColor: '#64748B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  statusHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: p(16),
+    paddingBottom: p(16),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  infoCardTitle: {
+    fontSize: p(14),
+    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
+  },
+  fullStatusBadge: {
+    paddingHorizontal: p(10),
+    paddingVertical: p(6),
+    borderRadius: p(8),
+  },
+  fullStatusBadgeText: {
+    fontSize: p(11),
+    fontFamily: 'Poppins-Bold',
+  },
+  detailGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: p(12),
+  },
+  detailItem: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: p(11),
+    fontFamily: 'Poppins-Medium',
+    color: '#94A3B8',
+    marginBottom: p(4),
+  },
+  detailValue: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1E293B',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: p(24),
+  },
+  statsCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(14),
+    padding: p(12),
+    marginHorizontal: p(4),
+    alignItems: 'center',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: '#F1F5F9',
   },
-  statusCell: {
-    fontSize: p(12),
-    fontFamily: 'Poppins-Medium',
-    color: '#333',
-    textAlign: 'left',
-    paddingVertical: p(3),
-    paddingHorizontal: p(6),
-  },
-  statusBadgeMini: {
-    color: '#fff',
+  statsValue: {
+    fontSize: p(18),
     fontFamily: 'Poppins-Bold',
-    fontSize: p(11),
-    borderRadius: p(8),
-    paddingHorizontal: p(8),
-    paddingVertical: p(3),
-    overflow: 'hidden',
-    textAlign: 'center',
-    minWidth: p(35),
+    color: '#3660f9',
+    marginBottom: p(2),
   },
-  colId: { flex: 0.7, minWidth: 35 },
-  colDate: { flex: 1.5, minWidth: 85 },
-  colIn: { flex: 1, minWidth: 65 },
-  colOut: { flex: 1, minWidth: 65 },
-  colStatus: {
-    flex: 1,
-    minWidth: 65,
+  statsLabel: {
+    fontSize: p(10),
+    fontFamily: 'Poppins-Medium',
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  sectionTitle: {
+    fontSize: p(16),
+    fontFamily: 'Poppins-Bold',
+    color: '#0F172A',
+    marginBottom: p(12),
+    marginLeft: p(4),
+  },
+  workCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    padding: p(16),
+    marginBottom: p(16),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  workHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: p(12),
+  },
+  workCategory: {
+    flex: 1,
+  },
+  categoryLabel: {
+    fontSize: p(11),
+    fontFamily: 'Poppins-Medium',
+    color: '#94A3B8',
+    marginBottom: p(2),
+  },
+  categoryValue: {
+    fontSize: p(14),
+    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
+  },
+  workTypeBadge: {
+    paddingHorizontal: p(10),
+    paddingVertical: p(4),
+    borderRadius: p(8),
+  },
+  workTypeText: {
+    fontSize: p(11),
+    fontFamily: 'Poppins-Bold',
+  },
+  clientInfoBox: {
+    backgroundColor: '#F0F4FF',
+    padding: p(12),
+    borderRadius: p(10),
+    marginBottom: p(12),
+  },
+  clientLabel: {
+    fontSize: p(10),
+    fontFamily: 'Poppins-Medium',
+    color: '#3660f9',
+    marginBottom: p(2),
+  },
+  clientName: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
+  },
+  workDetailsBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: p(10),
+    padding: p(12),
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  workDetailsLabel: {
+    fontSize: p(11),
+    fontFamily: 'Poppins-Medium',
+    color: '#64748B',
+    marginBottom: p(4),
+  },
+  workDetailsText: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-Regular',
+    color: '#334155',
+    lineHeight: p(20),
+  },
+  noWorkText: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-Regular',
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: p(10),
   },
 });

@@ -17,7 +17,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import { p } from '../../utils/Responsive';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getEmpLeaves, clearLastActionMessage } from '../../redux/slices/leaveSlice'; // Import clear action
+import { getEmpLeaves, clearLastActionMessage } from '../../redux/slices/leaveSlice';
 
 export default function AllLeaves() {
   const navigation = useNavigation();
@@ -32,15 +32,13 @@ export default function AllLeaves() {
 
   const empLeaves = useSelector(state => state?.leaves?.empLeaves);
   const loading = useSelector(state => state?.allLeaves?.isLeaveLoading);
-  const lastActionMessage = useSelector(state => state?.leaves?.lastActionMessage); // Get message from Redux
+  const lastActionMessage = useSelector(state => state?.leaves?.lastActionMessage);
 
-  // Handle showing modal when there's a new action message
   useEffect(() => {
     if (lastActionMessage) {
       setModalMessage(lastActionMessage);
       showModal();
       
-      // Clear message after showing modal
       setTimeout(() => {
         dispatch(clearLastActionMessage());
       }, 3000);
@@ -55,7 +53,6 @@ export default function AllLeaves() {
       useNativeDriver: true,
     }).start();
 
-    // Auto-hide after 3 seconds
     setTimeout(() => {
       hideModal();
     }, 3000);
@@ -75,7 +72,6 @@ export default function AllLeaves() {
     await dispatch(getEmpLeaves());
   };
 
-  // Use useFocusEffect to fetch leaves immediately when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchLeaves();
@@ -149,74 +145,78 @@ export default function AllLeaves() {
     );
   });
 
-  const renderItem = ({ item }) => (
-    <View style={styles.cardRow}>
-      <View style={styles.accentBar} />
-      <View style={styles.cardContent}>
-        <View style={styles.cardRowTop}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.nameText}>{item.name}</Text>
-            <Text style={styles.cardSubText}>{item.email}</Text>
+  const getStatusStyles = (status) => {
+    switch (status) {
+      case 'Approved': return { bg: '#D1FAE5', text: '#059669' };
+      case 'Pending': return { bg: '#FEF3C7', text: '#D97706' };
+      case 'Rejected': return { bg: '#FEE2E2', text: '#DC2626' };
+      default: return { bg: '#F1F5F9', text: '#64748B' };
+    }
+  };
+
+  const getTypeStyles = (type) => {
+    const t = type.toLowerCase();
+    if (t.includes('casual')) return { bg: '#EFF6FF', text: '#3B82F6' };
+    if (t.includes('medical')) return { bg: '#ECFDF5', text: '#10B981' };
+    if (t.includes('emergency')) return { bg: '#FEF2F2', text: '#EF4444' };
+    return { bg: '#F5F3FF', text: '#8B5CF6' };
+  };
+
+  const renderItem = ({ item }) => {
+    const statusStyle = getStatusStyles(item.status);
+    const typeStyle = getTypeStyles(item.leave_type);
+
+    return (
+      <View style={styles.leaveCard}>
+        <View style={styles.leaveCardHeader}>
+          <View style={styles.titleRow}>
+            <View style={[styles.colorPill, { backgroundColor: typeStyle.text }]} />
+            <View style={styles.nameTypeWrap}>
+              <Text style={styles.leaveCardName}>{item.name}</Text>
+            </View>
           </View>
-          <TouchableOpacity
-            style={styles.eyeButton}
-            onPress={() => handlenavigate(item)}
-          >
-            <Feather name="eye" size={p(14)} color="#3360f9" />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.cardRowBottom}>
-          <View style={styles.cardInfoBlock}>
-            <Text style={styles.cardLabel}>Duration</Text>
-            <Text style={styles.cardValue}>{item.duration}</Text>
-          </View>
-          <View style={styles.cardInfoBlock}>
-            <Text style={styles.cardLabel}>Type</Text>
-            <Text style={styles.cardValue}>{item.leave_type}</Text>
-          </View>
-          <View style={styles.cardInfoBlock}>
-            <Text style={styles.cardLabel}>Status</Text>
-            <View
-              style={[
-                styles.statusChip,
-                item.status === 'Pending'
-                  ? styles.pendingChip
-                  : item.status === 'Approved'
-                  ? styles.approvedChip
-                  : item.status === 'Rejected'
-                  ? styles.rejectedChip
-                  : styles.unknownChip,
-              ]}
-            >
-              <Feather
-                name={
-                  item.status === 'Pending'
-                    ? 'clock'
-                    : item.status === 'Approved'
-                    ? 'check-circle'
-                    : item.status === 'Rejected'
-                    ? 'x-circle'
-                    : 'help-circle'
-                }
-                size={p(13)}
-                color={
-                  item.status === 'Pending'
-                    ? '#FF9800'
-                    : item.status === 'Approved'
-                    ? '#4CAF50'
-                    : item.status === 'Rejected'
-                    ? '#f44336'
-                    : '#999'
-                }
-                style={{ marginRight: 4 }}
-              />
-              <Text style={styles.statusChipText}>{item.status}</Text>
+          <View style={styles.badgesWrap}>
+            <View style={[styles.typeBadge, { backgroundColor: typeStyle.bg, borderWidth: 1, borderColor: typeStyle.text + '20' }]}>
+              <Text style={[styles.typeBadgeText, { color: typeStyle.text }]}>{item.leave_type}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+              <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
             </View>
           </View>
         </View>
+
+        <View style={styles.detailsRow}>
+          <View style={styles.detailItem}>
+            <Feather name="calendar" size={p(13)} color="#64748B" />
+            <Text style={styles.detailText}>{formatDateDMY(item.from_date)}</Text>
+          </View>
+          <View style={styles.dotSeparator} />
+          <View style={styles.detailItem}>
+            <Feather name="clock" size={p(13)} color="#64748B" />
+            <Text style={styles.detailText}>{item.duration}</Text>
+          </View>
+        </View>
+
+        {item.leave_description ? (
+          <View style={styles.leaveCardFooterReason}>
+            <Feather name="align-left" size={p(12)} color="#94A3B8" style={{ marginRight: p(6), marginTop: p(2) }} />
+            <Text style={styles.leaveCardReason} numberOfLines={1}>
+              {item.leave_description}
+            </Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity
+          style={styles.actionBtnOutline}
+          onPress={() => handlenavigate(item)}
+          activeOpacity={0.7}
+        >
+          <Feather name="eye" size={p(14)} color="#3660f9" style={{ marginRight: p(6) }} />
+          <Text style={styles.actionBtnOutlineText}>Review Leave</Text>
+        </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderTableHeader = () => (
     <View style={styles.tableHeaderRow}>
@@ -249,7 +249,7 @@ export default function AllLeaves() {
           onPress={() => handlenavigate(item)}
           style={styles.tableEyeButton}
         >
-          <Feather name="eye" size={p(16)} color="#3360f9" />
+          <Feather name="eye" size={p(16)} color="#3660f9" />
         </TouchableOpacity>
       </View>
     </View>
@@ -266,6 +266,7 @@ export default function AllLeaves() {
       >
         <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
           <View style={styles.modalContent}>
+            <Feather name="info" size={p(24)} color="#3660f9" style={{ marginBottom: p(8) }} />
             <Text style={styles.modalText}>{modalMessage}</Text>
           </View>
         </Animated.View>
@@ -274,16 +275,16 @@ export default function AllLeaves() {
       <View style={styles.stickyHeader}>
         <View style={styles.headerRow}>
           <View style={styles.searchBarContainer}>
-            <Icon
+            <Feather
               name="search"
-              size={p(16)}
-              color="#666"
+              size={p(18)}
+              color="#64748B"
               style={styles.searchIcon}
             />
             <TextInput
               style={styles.searchBar}
-              placeholder="Search by name, type, or status..."
-              placeholderTextColor="#888"
+              placeholder="Search leaves..."
+              placeholderTextColor="#94A3B8"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -291,16 +292,17 @@ export default function AllLeaves() {
           <TouchableOpacity
             style={styles.toggleButton}
             onPress={() => setViewMode(viewMode === 'card' ? 'table' : 'card')}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
             <Feather
               name={viewMode === 'card' ? 'list' : 'grid'}
-              size={p(22)}
+              size={p(20)}
               color="#3660f9"
             />
           </TouchableOpacity>
         </View>
       </View>
+      
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3660f9" />
@@ -320,7 +322,6 @@ export default function AllLeaves() {
               tintColor="#3660f9"
             />
           }
-          ItemSeparatorComponent={() => <View style={styles.divider} />}
         />
       ) : (
         <ScrollView
@@ -358,25 +359,13 @@ export default function AllLeaves() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4f7fb',
+    backgroundColor: '#F8FAFC',
   },
   stickyHeader: {
-    backgroundColor: '#3660f9',
-    paddingTop: p(15),
-    paddingBottom: p(18),
-    paddingHorizontal: p(18),
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: p(20),
-    fontFamily: 'Montserrat-SemiBold',
-    marginBottom: p(10),
-    textAlign: 'left',
+    backgroundColor: '#F8FAFC',
+    paddingTop: p(16),
+    paddingBottom: p(12),
+    paddingHorizontal: p(16),
   },
   headerRow: {
     flexDirection: 'row',
@@ -384,18 +373,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   searchBarContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: p(10),
-    paddingHorizontal: p(12),
-    elevation: 2,
-    shadowColor: '#000',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(14),
+    paddingHorizontal: p(14),
+    marginRight: p(12),
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    maxWidth: '80%',
-    marginRight: p(10),
+    elevation: 2,
   },
   searchIcon: {
     marginRight: p(8),
@@ -403,8 +394,23 @@ const styles = StyleSheet.create({
   searchBar: {
     flex: 1,
     paddingVertical: p(12),
+    fontFamily: 'Poppins-Regular',
     fontSize: p(14),
-    color: '#333',
+    color: '#1E293B',
+  },
+  toggleButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(14),
+    padding: p(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#64748B',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   loadingContainer: {
     flex: 1,
@@ -412,155 +418,161 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContainer: {
-    padding: p(16),
+    paddingHorizontal: p(16),
     paddingBottom: p(40),
   },
-  cardRow: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+  leaveCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: p(16),
-    marginBottom: p(16),
-    borderWidth: 1,
-    borderColor: '#e6e6e6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    marginBottom: p(12),
+    padding: p(14),
+    shadowColor: '#64748B',
     shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  accentBar: {
-    width: p(6),
-    borderTopLeftRadius: p(16),
-    borderBottomLeftRadius: p(16),
-    backgroundColor: '#3660f9',
+  leaveCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: p(10),
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
     marginRight: p(10),
   },
-  cardContent: {
-    flex: 1,
-    paddingVertical: p(10),
-    paddingRight: p(6),
+  colorPill: {
+    width: p(4),
+    height: p(16),
+    borderRadius: p(2),
+    marginRight: p(8),
   },
-  cardRowTop: {
+  nameTypeWrap: {
+    flex: 1,
+  },
+  leaveCardName: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(14),
+    color: '#0F172A',
+  },
+  badgesWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: p(8),
+    gap: p(6),
   },
-  nameText: {
-    fontSize: p(15),
-    color: '#222',
-    fontWeight: '700',
-    flex: 1,
-    fontFamily: 'Montserrat-SemiBold',
-    marginBottom: 2,
-  },
-  cardSubText: {
-    fontSize: p(12),
-    color: '#888',
-    fontFamily: 'Rubik-Regular',
-    marginBottom: 2,
-  },
-  cardRowBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: p(4),
-  },
-  cardInfoBlock: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  cardLabel: {
-    fontSize: p(11),
-    color: '#888',
-    marginBottom: p(2),
-    fontWeight: '500',
-    fontFamily: 'Rubik-Regular',
-  },
-  cardValue: {
-    fontSize: p(13),
-    color: '#333',
-    fontWeight: '600',
-    fontFamily: 'Rubik-Regular',
-  },
-  statusChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: p(12),
+  typeBadge: {
+    borderRadius: p(6),
+    paddingHorizontal: p(8),
     paddingVertical: p(3),
+  },
+  typeBadgeText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(9),
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statusBadge: {
+    borderRadius: p(12),
     paddingHorizontal: p(10),
-    marginTop: 2,
-    minWidth: p(70),
-    justifyContent: 'center',
+    paddingVertical: p(4),
   },
-  statusChipText: {
-    fontSize: p(12),
-    fontFamily: 'Montserrat-SemiBold',
-    fontWeight: '700',
+  statusText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(10),
   },
-  pendingChip: {
-    backgroundColor: '#FFF3E0',
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: p(12),
+    paddingHorizontal: p(4),
   },
-  approvedChip: {
-    backgroundColor: '#E8F5E9',
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  rejectedChip: {
-    backgroundColor: '#ffebee',
+  detailText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(11.5),
+    color: '#475569',
+    marginLeft: p(6),
   },
-  unknownChip: {
-    backgroundColor: '#f0f0f0',
+  dotSeparator: {
+    width: p(4),
+    height: p(4),
+    borderRadius: p(2),
+    backgroundColor: '#CBD5E1',
+    marginHorizontal: p(10),
   },
-  eyeButton: {
-    backgroundColor: '#f4f7fb',
-    padding: p(5),
+  leaveCardFooterReason: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8FAFC',
     borderRadius: p(8),
+    paddingHorizontal: p(10),
+    paddingVertical: p(8),
+    marginBottom: p(12),
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  leaveCardReason: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: p(11.5),
+    color: '#64748B',
+    flex: 1,
+    lineHeight: p(18),
+  },
+  actionBtnOutline: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    paddingVertical: p(10),
+    backgroundColor: '#EFF6FF',
+    borderRadius: p(10),
     borderWidth: 1,
-    borderColor: '#3360f9',
-    marginLeft: p(10),
+    borderColor: '#DBEAFE',
   },
-  divider: {
-    height: 10,
-    backgroundColor: 'transparent',
-  },
-  toggleButton: {
-    backgroundColor: '#fff',
-    borderRadius: p(8),
-    padding: p(8),
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#3660f9',
+  actionBtnOutlineText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(13),
+    color: '#3660f9',
   },
   tableScrollView: {
     flexGrow: 0,
+    paddingHorizontal: p(16),
   },
   tableContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: p(12),
-    marginTop: p(10),
+    marginBottom: p(20),
     paddingBottom: p(10),
-    elevation: 1,
+    elevation: 4,
+    shadowColor: '#3660f9',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
     overflow: 'hidden',
     minWidth: 700,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   tableHeaderRow: {
     flexDirection: 'row',
-    backgroundColor: '#f4f7fb',
-    paddingVertical: p(10),
+    backgroundColor: '#F8FAFC',
+    paddingVertical: p(12),
     paddingHorizontal: p(10),
-    borderTopLeftRadius: p(12),
-    borderTopRightRadius: p(12),
     borderBottomWidth: 1,
-    borderBottomColor: '#e6e6e6',
+    borderBottomColor: '#E2E8F0',
     minWidth: 700,
   },
   tableHeaderCell: {
-    fontWeight: '700',
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#3360f9',
+    fontFamily: 'Poppins-SemiBold',
+    color: '#64748B',
     fontSize: p(12),
     textAlign: 'left',
     paddingHorizontal: p(8),
@@ -568,29 +580,28 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: p(10),
+    paddingVertical: p(12),
     paddingHorizontal: p(10),
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     minWidth: 700,
   },
   tableCell: {
     fontSize: p(13),
-    color: '#222',
-    fontFamily: 'Rubik-Regular',
+    color: '#1E293B',
+    fontFamily: 'Poppins-Medium',
     textAlign: 'left',
     paddingHorizontal: p(8),
-    paddingVertical: p(4),
   },
   tableEyeButton: {
-    padding: p(4),
-    borderRadius: p(6),
-    backgroundColor: '#f4f7fb',
+    padding: p(6),
+    borderRadius: p(8),
+    backgroundColor: '#EEF2FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   tableDivider: {
     height: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F1F5F9',
     marginHorizontal: p(10),
   },
   colName: {
@@ -615,25 +626,30 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     textAlign: 'center',
   },
-  // Modal styles
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    padding: p(20),
   },
   modalContent: {
-    backgroundColor: '#fff',
-    padding: p(20),
-    borderRadius: p(10),
+    backgroundColor: '#FFFFFF',
+    padding: p(24),
+    borderRadius: p(20),
     alignItems: 'center',
     justifyContent: 'center',
-    width: '80%',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
   },
   modalText: {
-    fontSize: p(16),
-    fontWeight: '600',
+    fontSize: p(15),
+    fontFamily: 'Poppins-Medium',
     textAlign: 'center',
-    color: '#333',
+    color: '#1E293B',
   },
 });

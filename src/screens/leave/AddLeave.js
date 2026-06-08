@@ -53,7 +53,7 @@ export default function AddLeave({ navigation }) {
   const scrollViewRef = useRef(null);
   const timerRef = useRef(null);
 
-  // Formaconst [isSubmitting, setIsSubmitting] = useState(false);t date as YYYY-MM-DD
+  // Format date as YYYY-MM-DD
   const formatDate = date => {
     if (!date) return '';
     const d = new Date(date);
@@ -130,6 +130,7 @@ export default function AddLeave({ navigation }) {
     setReason('');
     setFormError('');
   };
+  
   // Handle API response and success state
   useEffect(() => {
     if (isSubmitting && !addLeaveLoading) {
@@ -152,8 +153,11 @@ export default function AddLeave({ navigation }) {
           // Close modal and navigate back
           setShowSuccessModal(false);
           resetForm();
-          // Navigate to Drawer first, then to My Leaves
-          navigation.navigate('Drawer', { screen: 'My Leaves' });
+          // Navigate to Drawer -> HomeTabs -> My Leaves
+          navigation.navigate('Drawer', { 
+            screen: 'HomeTabs', 
+            params: { screen: 'My Leaves' } 
+          });
         }, 2500);
       }
     }
@@ -211,93 +215,118 @@ export default function AddLeave({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           {/* Leave Category Dropdown */}
-          <Text style={styles.label}>Leave Category</Text>
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() => setShowDropdown(!showDropdown)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.dropdownText}>{category?.label}</Text>
-            <Feather
-              name={showDropdown ? 'chevron-up' : 'chevron-down'}
-              size={p(18)}
-              color="#888"
-            />
-          </TouchableOpacity>
-          {showDropdown && (
-            <View style={styles.dropdownList}>
-              {leaveCategories.map(cat => (
-                <TouchableOpacity
-                  key={cat.value || 'default'}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setCategory(cat);
-                    setShowDropdown(false);
-                  }}
-                >
-                  <Text style={styles.dropdownItemText}>{cat.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Leave Category</Text>
+            <TouchableOpacity
+              style={[styles.inputBox, showDropdown && styles.inputBoxActive]}
+              onPress={() => setShowDropdown(!showDropdown)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.inputText, !category?.value && { color: '#94A3B8' }]}>
+                {category?.label}
+              </Text>
+              <Feather
+                name={showDropdown ? 'chevron-up' : 'chevron-down'}
+                size={p(20)}
+                color="#64748B"
+              />
+            </TouchableOpacity>
+            
+            {showDropdown && (
+              <View style={styles.dropdownList}>
+                {leaveCategories.map(cat => (
+                  <TouchableOpacity
+                    key={cat.value || 'default'}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setCategory(cat);
+                      setShowDropdown(false);
+                    }}
+                  >
+                    <Text style={styles.dropdownItemText}>{cat.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
 
           {/* Leave Type Radio Buttons */}
-          <View style={{ marginTop: p(18) }}>
-            {leaveTypes.map(type => (
-              <TouchableOpacity
-                key={type.value}
-                style={styles.radioRow}
-                onPress={() => setLeaveType(type)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.radioOuter}>
-                  {leaveType?.value === type.value && (
-                    <View style={styles.radioInner} />
-                  )}
-                </View>
-                <Text style={styles.radioLabel}>{type.label}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Leave Duration</Text>
+            <View style={styles.radioContainer}>
+              {leaveTypes.map(type => {
+                const isSelected = leaveType?.value === type.value;
+                return (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[styles.radioCard, isSelected && styles.radioCardActive]}
+                    onPress={() => setLeaveType(type)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.radioOuter, isSelected && styles.radioOuterActive]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={[styles.radioLabel, isSelected && styles.radioLabelActive]}>
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
 
           {/* Date Selection */}
-          <Text style={[styles.label, { marginTop: p(18) }]}>
-            {leaveType?.value === 'multipleDays' ? 'Dates' : 'Date'}
-          </Text>
-
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {/* From Date */}
-            <TouchableOpacity
-              style={styles.dateInput}
-              activeOpacity={0.8}
-              onPress={() => {
-                setShowDatePicker(true);
-                setDateField('from');
-              }}
-            >
-              <Text style={styles.dateText}>
-                {fromDate ? formatDate(fromDate) : 'From Date'}
+          {(leaveType?.value === 'singleDay' || leaveType?.value === 'halfDay' || leaveType?.value === 'multipleDays') && (
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>
+                {leaveType?.value === 'multipleDays' ? 'Select Dates' : 'Select Date'}
               </Text>
-              <MaterialIcons name="date-range" size={p(20)} color="#3360f9" />
-            </TouchableOpacity>
+              
+              <View style={styles.dateRow}>
+                {/* From Date */}
+                <TouchableOpacity
+                  style={[styles.inputBox, styles.dateBox]}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setShowDatePicker(true);
+                    setDateField('from');
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.dateSubLabel}>From</Text>
+                    <Text style={[styles.inputText, !fromDate && { color: '#94A3B8' }]}>
+                      {fromDate ? formatDate(fromDate) : 'YYYY-MM-DD'}
+                    </Text>
+                  </View>
+                  <View style={styles.dateIconWrap}>
+                    <Feather name="calendar" size={p(18)} color="#3660f9" />
+                  </View>
+                </TouchableOpacity>
 
-            {/* To Date - Only show for multiple days */}
-            {leaveType?.value === 'multipleDays' && (
-              <TouchableOpacity
-                style={styles.dateInput}
-                activeOpacity={0.8}
-                onPress={() => {
-                  setShowDatePicker(true);
-                  setDateField('to');
-                }}
-              >
-                <Text style={styles.dateText}>
-                  {toDate ? formatDate(toDate) : 'To Date'}
-                </Text>
-                <MaterialIcons name="date-range" size={p(20)} color="#3360f9" />
-              </TouchableOpacity>
-            )}
-          </View>
+                {/* To Date - Only show for multiple days */}
+                {leaveType?.value === 'multipleDays' && (
+                  <TouchableOpacity
+                    style={[styles.inputBox, styles.dateBox]}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setShowDatePicker(true);
+                      setDateField('to');
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.dateSubLabel}>To</Text>
+                      <Text style={[styles.inputText, !toDate && { color: '#94A3B8' }]}>
+                        {toDate ? formatDate(toDate) : 'YYYY-MM-DD'}
+                      </Text>
+                    </View>
+                    <View style={styles.dateIconWrap}>
+                      <Feather name="calendar" size={p(18)} color="#3660f9" />
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
 
           {/* Date Picker */}
           {showDatePicker && (
@@ -310,24 +339,31 @@ export default function AddLeave({ navigation }) {
               mode="date"
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={handleDateChange}
-              minimumDate={new Date()}
             />
           )}
 
           {/* Reason Input */}
-          <Text style={[styles.label, { marginTop: p(18) }]}>Reason :</Text>
-          <TextInput
-            style={styles.reasonInput}
-            placeholder="Reason for leave"
-            value={reason}
-            onChangeText={setReason}
-            placeholderTextColor="#888"
-            multiline
-            minHeight={p(100)}
-          />
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Reason</Text>
+            <TextInput
+              style={[styles.inputBox, styles.textArea]}
+              placeholder="Please describe your reason for taking leave..."
+              value={reason}
+              onChangeText={setReason}
+              placeholderTextColor="#94A3B8"
+              multiline
+              minHeight={p(120)}
+              textAlignVertical="top"
+            />
+          </View>
 
           {/* Error Message */}
-          {formError && <Text style={styles.errorText}>{formError}</Text>}
+          {formError ? (
+            <View style={styles.errorBox}>
+              <Feather name="alert-circle" size={p(16)} color="#EF0107" />
+              <Text style={styles.errorText}>{formError}</Text>
+            </View>
+          ) : null}
 
           {/* Buttons */}
           <View style={styles.btnRow}>
@@ -336,22 +372,26 @@ export default function AddLeave({ navigation }) {
               onPress={() => navigation.goBack()}
               disabled={addLeaveLoading || isSubmitting}
             >
-              <Text style={styles.closeBtnText}>Close</Text>
+              <Text style={styles.closeBtnText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.addBtn,
-                (addLeaveLoading || isSubmitting) && {
-                  backgroundColor: '#85a0f9',
-                },
+                (addLeaveLoading || isSubmitting) && styles.addBtnDisabled,
               ]}
               onPress={handleAddLeave}
               disabled={addLeaveLoading || isSubmitting}
+              activeOpacity={0.8}
             >
-              <Text style={styles.addBtnText}>
-                {addLeaveLoading || isSubmitting ? 'Adding...' : 'Add'}
-              </Text>
+              {addLeaveLoading || isSubmitting ? (
+                <Text style={styles.addBtnText}>Submitting...</Text>
+              ) : (
+                <>
+                  <Text style={styles.addBtnText}>Submit Application</Text>
+                  <Feather name="arrow-right" size={p(18)} color="#FFFFFF" style={{ marginLeft: p(8) }} />
+                </>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -363,38 +403,22 @@ export default function AddLeave({ navigation }) {
         transparent
         animationType="fade"
         onRequestClose={() => {
-          if (timerRef.current) {
-            clearTimeout(timerRef.current);
-          }
+          if (timerRef.current) clearTimeout(timerRef.current);
           setShowSuccessModal(false);
           resetForm();
-          navigation.navigate('Drawer', { screen: 'My Leaves' });
+          navigation.navigate('Drawer', { 
+            screen: 'HomeTabs', 
+            params: { screen: 'My Leaves' } 
+          });
         }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.successDialog}>
-            <MaterialIcons
-              name="check-circle"
-              size={p(48)}
-              color="#4CAF50"
-              style={{ marginBottom: p(10) }}
-            />
-            <Text style={styles.successText}>Leave added successfully!</Text>
-            {/* <Text style={styles.successSubText}>Redirecting to My Leaves in a moment...</Text>
-      
-             <TouchableOpacity
-         style={styles.manualCloseButton}
-         onPress={() => {
-           if (timerRef.current) {
-             clearTimeout(timerRef.current);
-           }
-           setShowSuccessModal(false);
-           resetForm();
-           navigation.navigate('Drawer', { screen: 'My Leaves' });
-         }}
-       >
-        <Text style={styles.manualCloseButtonText}>Go Now</Text>
-      </TouchableOpacity> */}
+            <View style={styles.successIconWrap}>
+              <Feather name="check" size={p(40)} color="#10B981" />
+            </View>
+            <Text style={styles.successTitle}>Success!</Text>
+            <Text style={styles.successText}>Your leave application has been submitted successfully.</Text>
           </View>
         </View>
       </Modal>
@@ -405,160 +429,252 @@ export default function AddLeave({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
   },
   content: {
-    padding: p(18),
+    padding: p(20),
     paddingBottom: p(340),
+  },
+  formGroup: {
+    marginBottom: p(24),
   },
   label: {
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(15),
-    color: '#222',
-    marginBottom: p(6),
+    fontSize: p(14),
+    color: '#1E293B',
+    marginBottom: p(8),
+    letterSpacing: 0.2,
   },
-  dropdown: {
+  inputBox: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: p(8),
-    paddingVertical: p(12),
-    paddingHorizontal: p(14),
+    borderColor: '#E2E8F0',
+    borderRadius: p(14),
+    paddingVertical: p(16),
+    paddingHorizontal: p(16),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fafbfc',
+    shadowColor: '#64748B',
+    shadowOpacity: 0.03,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  dropdownText: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: p(15),
-    color: '#444',
+  inputBoxActive: {
+    borderColor: '#3660f9',
+    backgroundColor: '#F0F4FF',
+  },
+  inputText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(14),
+    color: '#0F172A',
+    flex: 1,
   },
   dropdownList: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: p(8),
-    marginTop: p(2),
-    backgroundColor: '#fafbfc',
+    borderColor: '#E2E8F0',
+    borderRadius: p(12),
+    marginTop: p(8),
     overflow: 'hidden',
+    shadowColor: '#64748B',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   dropdownItem: {
-    paddingVertical: p(12),
-    paddingHorizontal: p(14),
+    paddingVertical: p(14),
+    paddingHorizontal: p(16),
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F1F5F9',
   },
   dropdownItemText: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: p(15),
-    color: '#444',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(14),
+    color: '#334155',
   },
-  radioRow: {
+  radioContainer: {
+    flexDirection: 'column',
+    gap: p(10),
+  },
+  radioCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: p(8),
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: p(12),
+    padding: p(14),
+    shadowColor: '#64748B',
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  radioCardActive: {
+    borderColor: '#3660f9',
+    backgroundColor: '#EEF2FF',
   },
   radioOuter: {
-    width: p(22),
-    height: p(22),
-    borderRadius: p(11),
+    width: p(20),
+    height: p(20),
+    borderRadius: p(10),
     borderWidth: 2,
-    borderColor: '#3360f9',
+    borderColor: '#94A3B8',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: p(10),
+    marginRight: p(12),
+  },
+  radioOuterActive: {
+    borderColor: '#3660f9',
   },
   radioInner: {
-    width: p(12),
-    height: p(12),
-    borderRadius: p(6),
-    backgroundColor: '#3360f9',
+    width: p(10),
+    height: p(10),
+    borderRadius: p(5),
+    backgroundColor: '#3660f9',
   },
   radioLabel: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: p(15),
-    color: '#222',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(14),
+    color: '#475569',
   },
-  dateInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: p(8),
-    paddingVertical: p(12),
-    paddingHorizontal: p(14),
+  radioLabelActive: {
+    color: '#3660f9',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  dateRow: {
     flexDirection: 'row',
+    gap: p(12),
+  },
+  dateBox: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fafbfc',
-    marginTop: p(2),
   },
-  dateText: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: p(15),
-    color: '#444',
+  dateSubLabel: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(11),
+    color: '#94A3B8',
+    marginBottom: p(2),
   },
-  reasonInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
+  dateIconWrap: {
+    width: p(36),
+    height: p(36),
     borderRadius: p(8),
-    paddingVertical: p(12),
-    paddingHorizontal: p(14),
-    fontFamily: 'Poppins-Regular',
-    fontSize: p(15),
-    color: '#222',
-    backgroundColor: '#fafbfc',
-    marginTop: p(2),
-    textAlignVertical: 'top',
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textArea: {
+    paddingTop: p(16),
   },
   btnRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: p(28),
+    gap: p(12),
+    marginTop: p(10),
   },
   closeBtn: {
-    backgroundColor: '#e0e0e0',
-    borderRadius: p(8),
-    paddingVertical: p(12),
-    paddingHorizontal: p(28),
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: p(14),
+    paddingVertical: p(16),
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#64748B',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   closeBtnText: {
-    color: '#222',
+    color: '#475569',
     fontFamily: 'Poppins-SemiBold',
     fontSize: p(15),
   },
   addBtn: {
-    backgroundColor: '#3360f9',
-    borderRadius: p(8),
-    paddingVertical: p(12),
-    paddingHorizontal: p(28),
+    flex: 2,
+    backgroundColor: '#3660f9', // Primary Blue
+    borderRadius: p(14),
+    paddingVertical: p(16),
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#3660f9',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  addBtnDisabled: {
+    backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   addBtnText: {
-    color: '#fff',
-    fontFamily: 'Poppins-SemiBold',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins-Bold',
     fontSize: p(15),
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: p(10),
+    padding: p(12),
+    marginBottom: p(20),
+  },
+  errorText: {
+    color: '#EF0107',
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(13),
+    marginLeft: p(8),
+    flex: 1,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: p(20),
   },
   successDialog: {
-    backgroundColor: 'white',
-    padding: p(25),
-    borderRadius: p(12),
+    backgroundColor: '#FFFFFF',
+    padding: p(30),
+    borderRadius: p(24),
     alignItems: 'center',
-    width: '80%',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
+  successIconWrap: {
+    width: p(80),
+    height: p(80),
+    borderRadius: p(40),
+    backgroundColor: '#D1FAE5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: p(20),
+  },
+  successTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(22),
+    color: '#0F172A',
+    marginBottom: p(8),
   },
   successText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(18),
-    color: '#333',
-    textAlign: 'center',
-  },
-  errorText: {
-    color: 'red',
-    marginTop: p(10),
-    textAlign: 'center',
     fontFamily: 'Poppins-Regular',
-    fontSize: p(14),
+    fontSize: p(15),
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: p(22),
   },
 });

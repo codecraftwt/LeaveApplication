@@ -10,68 +10,71 @@ import { useFocusEffect } from '@react-navigation/native';
 import LeaveInfo from '../../components/dashboard/LeaveInfo';
 
 const leaveTypeColors = {
-  Casual: '#4fc3f7',
-  Medical: '#81c784',
-  Emergency: '#ffb74d',
-  Join: '#ba68c8',
+  Casual: '#3B82F6',    // Blue
+  Medical: '#10B981',   // Emerald
+  Emergency: '#EF4444', // Red
+  Join: '#8B5CF6',      // Purple
+};
+
+const leaveTypeBgColors = {
+  Casual: '#EFF6FF',
+  Medical: '#ECFDF5',
+  Emergency: '#FEF2F2',
+  Join: '#F5F3FF',
 };
 
 const statusColors = {
-  Approved: '#22bb33',
-  Pending: '#ff9800',
-  Rejected: '#e53935',
+  Approved: { bg: '#D1FAE5', text: '#059669' },
+  Pending: { bg: '#FEF3C7', text: '#D97706' },
+  Rejected: { bg: '#FEE2E2', text: '#DC2626' },
 };
 
 function LeaveCard({ item }) {
-  const leftColor = leaveTypeColors[item.type] || '#90caf9';
-  const statusColor = statusColors[item.status] || '#888';
+  const typeColor = leaveTypeColors[item.type] || '#3B82F6';
+  const typeBgColor = leaveTypeBgColors[item.type] || '#EFF6FF';
+  const statusConfig = statusColors[item.status] || { bg: '#F1F5F9', text: '#64748B' };
 
   return (
-    <View style={[styles.leaveCard, { borderLeftColor: leftColor }]}>
+    <View style={styles.leaveCard}>
       <View style={styles.leaveCardHeader}>
-        <Text style={styles.leaveCardName}>{item.name}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
+        <View style={styles.titleRow}>
+          <View style={[styles.colorPill, { backgroundColor: typeColor }]} />
+          <Text style={styles.leaveCardName}>{item.name}</Text>
+        </View>
+        <View style={styles.badgesWrap}>
+          <View style={[styles.typeBadge, { backgroundColor: typeBgColor, borderWidth: 1, borderColor: typeColor + '20' }]}>
+            <Text style={[styles.typeBadgeText, { color: typeColor }]}>{item.type}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
+            <Text style={[styles.statusText, { color: statusConfig.text }]}>{item.status}</Text>
+          </View>
         </View>
       </View>
 
-      <View style={styles.leaveCardRow}>
-        <View style={styles.leaveCardCol}>
-          <View style={styles.iconLabelRow}>
-            <Feather name="tag" size={p(16)} color={leftColor} style={styles.icon} />
-            <Text style={styles.leaveCardLabel}>Type</Text>
-          </View>
-          <Text style={styles.leaveCardValue}>{item.type}</Text>
+      <View style={styles.detailsRow}>
+        <View style={styles.detailItem}>
+          <Feather name="calendar" size={p(13)} color="#64748B" />
+          <Text style={styles.detailText}>{item.date}</Text>
         </View>
-
-        <View style={styles.leaveCardCol}>
-          <View style={styles.iconLabelRow}>
-            <MaterialIcons name="date-range" size={p(16)} color="#3360f9" style={styles.icon} />
-            <Text style={styles.leaveCardLabel}>Date</Text>
-          </View>
-          <Text style={styles.leaveCardValue}>{item.date}</Text>
-        </View>
-
-        <View style={styles.leaveCardColDays}>
-          <View style={styles.iconLabelRow}>
-            <Feather name="calendar" size={p(16)} color="#3360f9" style={styles.icon} />
-            <Text style={styles.leaveCardLabel}>Days</Text>
-          </View>
-          <Text style={styles.leaveCardValue}>{item.days}</Text>
+        <View style={styles.dotSeparator} />
+        <View style={styles.detailItem}>
+          <Feather name="clock" size={p(13)} color="#64748B" />
+          <Text style={styles.detailText}>{item.days} {item.days > 1 ? 'Days' : 'Day'}</Text>
         </View>
       </View>
 
-      <View style={styles.leaveCardRow}>
-        <View style={styles.leaveCardColFull}>
-          <Text style={styles.leaveCardLabel}>Reason</Text>
-          <Text style={styles.leaveCardValue}>{item.reason || '-'}</Text>
+      {item.reason ? (
+        <View style={styles.leaveCardFooter}>
+          <Feather name="align-left" size={p(12)} color="#94A3B8" style={{ marginRight: p(6), marginTop: p(2) }} />
+          <Text style={styles.leaveCardReason} numberOfLines={1}>
+            {item.reason}
+          </Text>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }
 
-// Add a helper to format date strings to dd-mm-yy
 function formatDateDMY(dateStr) {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-');
@@ -92,44 +95,55 @@ const MyLeaves = () => {
 
   return (
     <View style={styles.container}>
-      <LeaveInfo taken={9} pending={0.5} showViewButton={false} />
-      <View style={styles.headerSection}>
-        <Text style={styles.detailsTitle}>My Leave Details : </Text>
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={() => navigation.navigate('AddLeave')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.applyButtonText}>Apply for Leave</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.divider} />
-      {loading && (
-        <View style={{ alignItems: 'center', marginTop: 20 }}>
-          <ActivityIndicator size="large" color="#3360f9" />
+      <View>
+        <View style={{ paddingTop: p(12), paddingHorizontal: p(16) }}>
+          <LeaveInfo showViewButton={false} />
         </View>
-      )}
-      {error && (
-        <Text style={{ color: 'red', textAlign: 'center', marginTop: 10 }}>{error}</Text>
-      )}
+
+        <View style={styles.headerSection}>
+          <Text style={styles.detailsTitle}>My Leaves</Text>
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={() => navigation.navigate('AddLeave')}
+            activeOpacity={0.8}
+          >
+            <Feather name="plus" size={p(16)} color="#FFFFFF" style={{ marginRight: p(4) }} />
+            <Text style={styles.applyButtonText}>Apply Leave</Text>
+          </TouchableOpacity>
+        </View>
+
+        {loading && (
+          <View style={{ alignItems: 'center', marginTop: p(20) }}>
+            <ActivityIndicator size="large" color="#3660f9" />
+          </View>
+        )}
+        {error && (
+          <Text style={{ color: '#EF0107', textAlign: 'center', marginTop: p(10), fontFamily: 'Poppins-Medium' }}>
+            {error}
+          </Text>
+        )}
+      </View>
+
       <FlatList
         data={leaveList}
         keyExtractor={item => String(item.id)}
         renderItem={({ item }) => (
-          <LeaveCard
-            item={{
-              name: `${item.userdata?.first_name || ''} ${item.userdata?.last_name || ''}`,
-              type: item.type?.name || '',
-              date: item.from_date === item.to_date
-                ? formatDateDMY(item.from_date)
-                : `${formatDateDMY(item.from_date)} - ${formatDateDMY(item.to_date)}`,
-              days: item.no_of_days,
-              status: item.status === 1 ? 'Approved' : item.status === 0 ? 'Pending' : 'Rejected',
-              reason: item.leave_description,
-            }}
-          />
+          <View style={{ paddingHorizontal: p(16) }}>
+            <LeaveCard
+              item={{
+                name: `${item.userdata?.first_name || ''} ${item.userdata?.last_name || ''}`,
+                type: item.type?.name || '',
+                date: item.from_date === item.to_date
+                  ? formatDateDMY(item.from_date)
+                  : `${formatDateDMY(item.from_date)} to ${formatDateDMY(item.to_date)}`,
+                days: item.no_of_days,
+                status: item.status === 1 ? 'Approved' : item.status === 0 ? 'Pending' : 'Rejected',
+                reason: item.leave_description,
+              }}
+            />
+          </View>
         )}
-        contentContainerStyle={{ paddingBottom: 32, paddingTop: 4 }}
+        contentContainerStyle={{ paddingBottom: p(40) }}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -141,137 +155,142 @@ export default MyLeaves;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4f6fb',
-    padding: p(12),
+    backgroundColor: '#F8FAFC',
   },
   headerSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: p(10),
-    paddingHorizontal: p(4),
-    paddingVertical: p(10),
-    backgroundColor: '#fff',
-    borderRadius: p(14),
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e0e4ea',
-    marginVertical: p(12),
-    borderRadius: 1,
+    paddingHorizontal: p(16),
+    marginBottom: p(12),
+    marginTop: p(8),
   },
   detailsTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(14),
-    color: '#222',
-    letterSpacing: 0.2,
-    marginLeft: p(10),
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(18),
+    color: '#1E293B',
+    letterSpacing: -0.3,
   },
   applyButton: {
-    backgroundColor: '#3360f9',
-    borderRadius: p(8),
-    paddingVertical: p(4),
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3660f9', // Primary Blue
+    borderRadius: p(12),
+    paddingVertical: p(8),
     paddingHorizontal: p(16),
-    shadowColor: '#3360f9',
-    shadowOpacity: 0.10,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-    marginRight: p(10),
+    shadowColor: '#3660f9',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   applyButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(14),
+    fontSize: p(13),
     letterSpacing: 0.2,
   },
   leaveCard: {
-    backgroundColor: '#fff',
-    borderRadius: p(18),
-    marginBottom: p(18),
-    padding: p(18),
-    borderLeftWidth: p(6),
-    borderLeftColor: '#3360f9',
-    shadowColor: '#000',
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(16),
+    marginBottom: p(12),
+    padding: p(14),
+    shadowColor: '#64748B',
     shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   leaveCardHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: p(10),
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: p(10),
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: p(10),
+  },
+  colorPill: {
+    width: p(4),
+    height: p(16),
+    borderRadius: p(2),
+    marginRight: p(8),
   },
   leaveCardName: {
     fontFamily: 'Poppins-SemiBold',
-    fontSize: p(16),
-    color: '#222',
+    fontSize: p(14),
+    color: '#0F172A',
     flex: 1,
-    letterSpacing: 0.1,
+  },
+  badgesWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: p(6),
+  },
+  typeBadge: {
+    borderRadius: p(6),
+    paddingHorizontal: p(8),
+    paddingVertical: p(3),
+  },
+  typeBadgeText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: p(9),
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statusBadge: {
-    borderRadius: p(16),
-    paddingHorizontal: p(14),
+    borderRadius: p(12),
+    paddingHorizontal: p(10),
     paddingVertical: p(4),
-    alignItems: 'center',
-    backgroundColor: '#f4f6fb',
-    // borderWidth: 1.5,
-    // borderColor: '#3360f9',
-    minWidth: p(70),
   },
   statusText: {
-    color: '#fff',
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(13),
-    textAlign: 'center',
-    letterSpacing: 0.2,
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(10),
   },
-  leaveCardRow: {
+  detailsRow: {
     flexDirection: 'row',
-    marginBottom: p(6),
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: p(10),
+    paddingHorizontal: p(12),
   },
-  leaveCardCol: {
-    flex: 1,
-    alignItems: 'flex-start',
-    minWidth: p(90),
-  },
-  leaveCardColDays: {
-    alignItems: 'flex-end',
-    minWidth: p(60),
-    marginLeft: 'auto',
-  },
-  leaveCardColFull: {
-    flex: 1,
-    marginTop: p(4),
-  },
-  leaveCardLabel: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: p(12),
-    color: '#888',
-    marginBottom: p(2),
-    letterSpacing: 0.1,
-  },
-  leaveCardValue: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(14),
-    color: '#333',
-    letterSpacing: 0.1,
-  },
-  iconLabelRow: {
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  icon: {
-    marginRight: p(5),
+  detailText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(11.5),
+    color: '#475569',
+    marginLeft: p(6),
+  },
+  dotSeparator: {
+    width: p(4),
+    height: p(4),
+    borderRadius: p(2),
+    backgroundColor: '#CBD5E1',
+    marginHorizontal: p(10),
+  },
+  leaveCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8FAFC',
+    borderRadius: p(8),
+    paddingHorizontal: p(10),
+    paddingVertical: p(8),
+    marginTop: p(2),
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  leaveCardReason: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: p(11.5),
+    color: '#64748B',
+    flex: 1,
+    lineHeight: p(18),
   },
 });

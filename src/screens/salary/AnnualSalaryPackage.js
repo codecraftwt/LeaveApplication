@@ -899,32 +899,37 @@ const AnnualSalaryPackage = () => {
       <ScrollView
         style={styles.container}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3660f9']} />
         }
       >
-        <Text style={styles.title}>Get your Annual Package Here:</Text>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <TouchableOpacity
-            onPress={openpackage}
-            style={[styles.button, { backgroundColor: '#E97C1F' }]}
-          >
-            <Icon name={'eye-outline'} style={styles.icon} />
-            <Text style={styles.buttonText}>View</Text>
-          </TouchableOpacity>
+        <View style={styles.card}>
+          <View style={styles.iconContainer}>
+            <Icon1 name="file-text" size={p(36)} color="#3660f9" />
+          </View>
+          <Text style={styles.title}>Your Annual Package</Text>
+          <Text style={styles.subtitle}>
+            View or download your complete annual salary package and compensation details securely.
+          </Text>
+          
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              onPress={openpackage}
+              style={[styles.actionBtn, styles.viewBtn]}
+              activeOpacity={0.7}
+            >
+              <Icon name={'eye'} style={[styles.btnIcon, styles.viewBtnText]} />
+              <Text style={styles.viewBtnText}>View Package</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={generateAndDownloadPDF}
-            style={[styles.button, { backgroundColor: '#161719' }]}
-          >
-            <Icon1 name={'download'} style={styles.icon} />
-            <Text style={styles.buttonText}>Download</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={generateAndDownloadPDF}
+              style={[styles.actionBtn, styles.downloadBtn]}
+              activeOpacity={0.85}
+            >
+              <Icon1 name={'download'} style={[styles.btnIcon, styles.downloadBtnText]} />
+              <Text style={styles.downloadBtnText}>Download PDF</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -940,36 +945,86 @@ const AnnualSalaryPackage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: p(20),
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
+    padding: p(16),
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(24),
+    padding: p(28),
+    marginTop: p(10),
+    alignItems: 'center',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  iconContainer: {
+    width: p(80),
+    height: p(80),
+    borderRadius: p(40),
+    backgroundColor: '#f0f4ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: p(20),
   },
   title: {
-    fontSize: p(16),
-    fontFamily: 'Montserrat-SemiBold',
-    marginBottom: p(20),
-    color: '#333333',
+    fontSize: p(22),
+    fontFamily: 'Poppins-Bold',
+    color: '#0f172a',
+    marginBottom: p(8),
+    textAlign: 'center',
   },
-  button: {
+  subtitle: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-Regular',
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: p(32),
+    lineHeight: p(20),
+    paddingHorizontal: p(10),
+  },
+  actionRow: {
+    width: '100%',
+    flexDirection: 'column',
+    gap: p(14),
+  },
+  actionBtn: {
     flexDirection: 'row',
-    paddingHorizontal: p(15),
-    paddingVertical: p(9),
-    backgroundColor: '#007bff',
-    borderRadius: p(8),
+    width: '100%',
+    height: p(54),
+    borderRadius: p(14),
     alignItems: 'center',
     justifyContent: 'center',
-    margin: p(10),
-    width: '35%',
+    marginBottom: p(12),
   },
-  buttonText: {
-    color: '#fff',
-    fontFamily: 'Rubik-Regular',
+  viewBtn: {
+    backgroundColor: '#f8faff',
+    borderWidth: 1.5,
+    borderColor: '#3360f9',
+  },
+  viewBtnText: {
+    color: '#3360f9',
+    fontFamily: 'Poppins-Bold',
     fontSize: p(15),
   },
-  icon: {
-    color: '#fff',
-    fontSize: p(25),
-    marginRight: p(5),
-    fontWeight: '600',
+  downloadBtn: {
+    backgroundColor: '#F36F21',
+    shadowColor: '#F36F21',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8,
+  },
+  downloadBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(15),
+  },
+  btnIcon: {
+    fontSize: p(18),
+    marginRight: p(10),
   },
 });
 export default AnnualSalaryPackage;

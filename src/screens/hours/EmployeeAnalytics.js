@@ -25,7 +25,7 @@ function getLast10DaysRange() {
   const to = today;
   const from = new Date(today);
   from.setDate(from.getDate() - 9); // last 10 days including today
-  const format = d => `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+  const format = d => `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
   return { fromDate: format(from), toDate: format(to) };
 }
 
@@ -55,31 +55,35 @@ export default function EmployeeAnalytics() {
   // Prepare analytics data for cards
   const analyticsData = analytics?.data
     ? [
-        {
-          title: 'Billable Hours',
-          value: analytics.data.total_billable_hours,
-          icon: 'cash-outline',
-          backgroundColor: '#FF6F91',
-        },
-        {
-          title: 'Offline Hours',
-          value: analytics.data.total_offline_hours,
-          icon: 'desktop-outline',
-          backgroundColor: '#FF6347',
-        },
-        {
-          title: 'Study Hours',
-          value: analytics.data.total_study_hours,
-          icon: 'book-outline',
-          backgroundColor: '#2F80E9',
-        },
-        {
-          title: 'Inhouse Hours',
-          value: analytics.data.total_inhous_hours,
-          icon: 'business-outline',
-          backgroundColor: '#E6A54B',
-        },
-      ]
+      {
+        title: 'Billable Hours',
+        value: analytics.data.total_billable_hours,
+        icon: 'cash',
+        color: '#3660f9',
+        bgColor: '#F0F4FF',
+      },
+      {
+        title: 'Offline Hours',
+        value: analytics.data.total_offline_hours,
+        icon: 'desktop',
+        color: '#E97C1F',
+        bgColor: '#FFF5EC',
+      },
+      {
+        title: 'Study Hours',
+        value: analytics.data.total_study_hours,
+        icon: 'book',
+        color: '#10B981',
+        bgColor: '#ECFDF5',
+      },
+      {
+        title: 'Inhouse Hours',
+        value: analytics.data.total_inhous_hours,
+        icon: 'business',
+        color: '#8B5CF6',
+        bgColor: '#F5F3FF',
+      },
+    ]
     : [];
 
   function formatValue(val) {
@@ -92,9 +96,9 @@ export default function EmployeeAnalytics() {
     const [d, m, y] = str.split('-');
     return new Date(`${y}-${m}-${d}`);
   }
-  
+
   function formatDMY(date) {
-    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
   }
 
   // Date picker logic
@@ -109,7 +113,7 @@ export default function EmployeeAnalytics() {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
-    
+
     if (selectedDate) {
       const formatted = formatDMY(selectedDate);
       if (dateField === 'from') {
@@ -166,40 +170,41 @@ export default function EmployeeAnalytics() {
   return (
     <View style={styles.main}>
       <View style={styles.filterRow}>
+        <View style={styles.filterRowLeft}>
           <Text style={styles.filterTitle}>Last 10 Days Analytics</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity
-              style={styles.filterBtn}
-              onPress={openFilterModal}
-            >
-              <Feather name="sliders" size={p(18)} color="#3360f9" />
-            </TouchableOpacity>
-            {/* Show Clear Filter button only if filter is not default */}
-            {(() => {
-              const { fromDate: defaultFrom, toDate: defaultTo } = getLast10DaysRange();
-              const isDefault = fromDate === defaultFrom && toDate === defaultTo;
-              if (!isDefault) {
-                return (
-                  <TouchableOpacity
-                    style={styles.clearBtn}
-                    onPress={clearFilter}
-                  >
-                    <Text style={styles.clearBtnText}>Clear Filter</Text>
-                  </TouchableOpacity>
-                );
-              }
-              return null;
-            })()}
-          </View>
+          <Text style={styles.filterSubtitle}>
+            {fromDate} to {toDate}
+          </Text>
         </View>
-      <View style={styles.sub}>
-        
-        <Text style={{textAlign: 'center', marginBottom: p(10), color: '#222', fontFamily: 'Poppins-Regular'}}>
-          Analytics from {fromDate} to {toDate}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {(() => {
+            const { fromDate: defaultFrom, toDate: defaultTo } = getLast10DaysRange();
+            const isDefault = fromDate === defaultFrom && toDate === defaultTo;
+            if (!isDefault) {
+              return (
+                <TouchableOpacity
+                  style={styles.clearBtn}
+                  onPress={clearFilter}
+                >
+                  <Icon name="close" size={p(18)} color="#E97C1F" />
+                </TouchableOpacity>
+              );
+            }
+            return null;
+          })()}
+          <TouchableOpacity
+            style={styles.filterBtn}
+            onPress={openFilterModal}
+          >
+            <Feather name="sliders" size={p(18)} color="#3660f9" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView style={styles.sub} showsVerticalScrollIndicator={false}>
         {loading ? (
           <View style={{ alignItems: 'center', marginTop: p(30) }}>
-            <Text>Loading...</Text>
+            <Text style={styles.loadingText}>Loading Analytics...</Text>
           </View>
         ) : error ? (
           <View style={{ alignItems: 'center', marginTop: p(30) }}>
@@ -210,21 +215,27 @@ export default function EmployeeAnalytics() {
             {analyticsData.map((item, idx) => (
               <View
                 key={item.title}
-                style={[styles.card, { backgroundColor: item.backgroundColor }]}
+                style={styles.premiumCard}
               >
-                <Icon
-                  name={item.icon}
-                  size={p(38)}
-                  color="#fff"
-                  style={styles.cardIcon}
-                />
-                <Text style={styles.cardValue}>{formatValue(item.value)}</Text>
-                <Text style={styles.cardLabel}>{item.title}</Text>
+                <View style={styles.cardHeader}>
+                  <View style={[styles.iconContainer, { backgroundColor: item.bgColor }]}>
+                    <Icon
+                      name={item.icon}
+                      size={p(22)}
+                      color={item.color}
+                    />
+                  </View>
+                  <View style={[styles.statusDot, { backgroundColor: item.color }]} />
+                </View>
+                <View style={styles.cardBody}>
+                  <Text style={styles.cardValue}>{formatValue(item.value)}</Text>
+                  <Text style={styles.cardTitle}>{item.title}</Text>
+                </View>
               </View>
             ))}
           </View>
         )}
-      </View>
+      </ScrollView>
       {/* Modal for Date Range */}
       <Modal
         visible={isModalVisible}
@@ -304,90 +315,120 @@ export default function EmployeeAnalytics() {
 const styles = StyleSheet.create({
   main: {
     flex: 1,
-    backgroundColor: '#f5f6fa',
+    backgroundColor: '#F8FAFC',
   },
   sub: {
     flex: 1,
-    backgroundColor: '#f5f6fa',
-    padding: p(16),
+    paddingHorizontal: p(16),
   },
   filterRow: {
-    backgroundColor: '#3360f9',
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: p(18),
     paddingHorizontal: p(16),
-    paddingVertical: p(10),
+    paddingVertical: p(16),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 3,
+    marginBottom: p(16),
+    borderBottomWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  filterRowLeft: {
+    flex: 1,
   },
   filterTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(16),
-    color: '#fff',
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(18),
+    color: '#1E293B',
+  },
+  filterSubtitle: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(13),
+    color: '#64748B',
+    marginTop: p(2),
   },
   filterBtn: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: p(8),
-    paddingHorizontal: p(12),
-    borderRadius: p(8),
-    marginRight: p(10),
-  },
-  filterBtnText: {
-    color: '#fff',
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(15),
-    marginLeft: p(6),
+    backgroundColor: '#F0F4FF',
+    width: p(40),
+    height: p(40),
+    borderRadius: p(10),
   },
   clearBtn: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f6fa',
-    borderWidth: 1,
-    borderColor: '#3360f9',
-    paddingVertical: p(6),
-    paddingHorizontal: p(10),
-    borderRadius: p(8),
-  },
-  clearBtnText: {
-    color: '#3360f9',
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: p(14),
-    // marginLeft: p(6),
+    backgroundColor: '#FFF5EC',
+    width: p(40),
+    height: p(40),
+    borderRadius: p(10),
+    marginRight: p(8),
   },
   cardGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: p(12),
+    rowGap: p(16),
+    paddingBottom: p(30),
   },
-  card: {
-    width: width / 2 - p(28),
-    borderRadius: p(18),
-    marginBottom: p(18),
+  premiumCard: {
+    width: width / 2 - p(24),
+    backgroundColor: '#FFFFFF',
+    borderRadius: p(24),
+    padding: p(18),
+    shadowColor: '#94A3B8',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    minHeight: p(140),
+    borderWidth: 1,
+    borderColor: 'rgba(241, 245, 249, 0.8)',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  iconContainer: {
+    width: p(46),
+    height: p(46),
+    borderRadius: p(16),
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: p(15),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
-  cardIcon: {
-    marginBottom: p(10),
+  statusDot: {
+    width: p(8),
+    height: p(8),
+    borderRadius: p(4),
+    marginTop: p(4),
+    opacity: 0.8,
+  },
+  cardBody: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginTop: p(20),
   },
   cardValue: {
-    fontSize: p(32),
+    fontSize: p(28),
     fontFamily: 'Poppins-Bold',
-    color: '#fff',
-    marginBottom: p(5),
+    color: '#0F172A',
+    lineHeight: p(34),
   },
-  cardLabel: {
+  cardTitle: {
+    fontSize: p(13),
+    fontFamily: 'Poppins-Medium',
+    color: '#64748B',
+    marginTop: p(2),
+  },
+  loadingText: {
+    fontFamily: 'Poppins-Medium',
     fontSize: p(15),
-    fontFamily: 'Poppins-Regular',
-    color: '#fff',
-    opacity: 0.95,
+    color: '#64748B',
   },
   modalOverlay: {
     flex: 1,

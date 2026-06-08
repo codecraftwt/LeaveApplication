@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Text, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Alert, Image } from 'react-native';
 import ContributionCard from '../../components/dashboard/ContributionCard';
 import MonthStats from '../../components/dashboard/MonthStats';
 import EventsList from '../../components/dashboard/EventsList';
@@ -9,23 +9,23 @@ import { getDashboard, logout, getUser } from '../../redux/slices/authSlice';
 import LeaveInfo from '../../components/dashboard/LeaveInfo';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Feather from 'react-native-vector-icons/Feather';
+
 const DashboardScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const user = useSelector(state => state.auth.user);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
   // Function to handle automatic logout
   const handleAutoLogout = useCallback(async () => {
-    if (isLoggingOut) return; // Prevent multiple logout attempts
+    if (isLoggingOut) return;
     try {
       setIsLoggingOut(true);
-      console.log('Starting auto logout process...');
-      // Clear AsyncStorage
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
-      // Dispatch logout action
       dispatch(logout());
-      // Show alert to user with timeout
+
       Alert.alert(
         'Account Deactivated',
         'Your account has been deactivated. You have been logged out.',
@@ -33,7 +33,6 @@ const DashboardScreen = () => {
           {
             text: 'OK',
             onPress: () => {
-              // Navigate to login screen
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
@@ -41,11 +40,9 @@ const DashboardScreen = () => {
             },
           },
         ],
-        {
-          cancelable: false, // Prevent dismissing by tapping outside
-        },
+        { cancelable: false }
       );
-      // Force navigation to login screen after 3 seconds regardless of user interaction
+
       setTimeout(() => {
         navigation.reset({
           index: 0,
@@ -54,7 +51,6 @@ const DashboardScreen = () => {
       }, 3000);
     } catch (error) {
       console.error('Error during auto logout:', error);
-      // Even if there's an error, still navigate to login
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
@@ -63,24 +59,18 @@ const DashboardScreen = () => {
       setIsLoggingOut(false);
     }
   }, [dispatch, navigation, isLoggingOut]);
+
   // Check user status and auto logout if inactive
   useEffect(() => {
     if (user?.status) {
-      console.log('Checking user status:', user.status);
-      const inactiveStatuses = [
-        'inactive',
-        'deactivated',
-        'suspended',
-        'terminated',
-        'blocked',
-      ];
+      const inactiveStatuses = ['inactive', 'deactivated', 'suspended', 'terminated', 'blocked'];
       if (inactiveStatuses.includes(user.status.toLowerCase())) {
-        console.log('User status is inactive, triggering auto logout');
         handleAutoLogout();
       }
     }
   }, [user?.status, handleAutoLogout]);
-  // Use useFocusEffect to fetch dashboard data immediately when screen comes into focus
+
+  // Fetch dashboard data
   useFocusEffect(
     useCallback(() => {
       if (user?.id) {
@@ -88,58 +78,109 @@ const DashboardScreen = () => {
       }
     }, [dispatch, user?.id])
   );
-  // Periodic check for user status changes (every 30 seconds)
+
+  // Periodic check for user status changes
   useEffect(() => {
     if (!user?.id) return;
     const interval = setInterval(() => {
-      // Fetch latest user data to check for status changes
       dispatch(getUser(user.id));
-    }, 30000); // Check every 30 seconds
+    }, 30000);
     return () => clearInterval(interval);
   }, [dispatch, user?.id]);
+
+  // Get User Initials for Avatar
+  const getInitials = () => {
+    const first = user?.first_name ? user.first_name.charAt(0) : '';
+    const last = user?.last_name ? user.last_name.charAt(0) : '';
+    return (first + last).toUpperCase() || 'U';
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.headContainer}>
-        <Text style={styles.headtitle}>
-          Welcome : {user?.first_name || ''} {user?.middle_name || ''}{' '}
-          {user?.last_name || ''}
-        </Text>
+    <View style={styles.container}>
+      {/* Premium Header */}
+      <View style={styles.headerGreeting}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.greetingTitle}>
+            Hello, {user?.first_name || 'User'}
+          </Text>
+          <Text style={styles.greetingSubtitle}>
+            Here is your activity overview
+          </Text>
+        </View>
+        <View style={styles.avatarContainer}>
+          <Text style={styles.avatarText}>{getInitials()}</Text>
+        </View>
       </View>
-      <View style={styles.mainContainer}>
-        <ContributionCard />
-        <MonthStats />
-        <LeaveInfo showViewButton={true} />
-        <EventsList />
-      </View>
-    </ScrollView>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.mainContainer}>
+          <ContributionCard />
+          <MonthStats />
+          <LeaveInfo showViewButton={true} />
+          <EventsList />
+        </View>
+      </ScrollView>
+    </View>
   );
 };
+
 export default DashboardScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC', // Sleek ultra-light slate background
+  },
+  scrollContent: {
+    paddingBottom: p(40),
+  },
+  headerGreeting: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: p(20),
+    paddingTop: p(8),
+    paddingBottom: p(16),
+  },
+  headerTextContainer: {
+    flex: 1,
+    paddingRight: p(15),
+  },
+  greetingTitle: {
+    fontSize: p(22),
+    fontFamily: 'Poppins-Bold',
+    color: '#0F172A',
+    letterSpacing: -0.5,
+    marginBottom: p(2),
+  },
+  greetingSubtitle: {
+    fontSize: p(14),
+    fontFamily: 'Poppins-Medium',
+    color: '#64748B',
+  },
+  avatarContainer: {
+    width: p(50),
+    height: p(50),
+    borderRadius: p(25),
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#EFF6FF',
+  },
+  avatarText: {
+    fontSize: p(18),
+    fontFamily: 'Poppins-Bold',
+    color: '#FFFFFF',
   },
   mainContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    marginTop: p(10),
-    borderTopRightRadius: p(30),
-    borderTopLeftRadius: p(30),
-    marginHorizontal: p(13),
-  },
-  headtitle: {
-    fontSize: p(14),
-    // marginBottom: p(10),
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  headContainer: {
-    backgroundColor: '#FA6A00',
-    paddingVertical: p(6),
-    borderRadius: p(12),
-    marginTop: p(10),
-    marginHorizontal: p(13),
+    paddingHorizontal: p(20),
+    gap: p(12),
   },
 });

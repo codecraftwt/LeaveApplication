@@ -296,14 +296,14 @@ export default function Dinner() {
           <Icon
             name="restaurant"
             size={p(22)}
-            color="#fff"
+            color="#3660f9"
             style={{ marginRight: p(10) }}
           />
-          <Text style={styles.title}>DAILY DINNER MANAGEMENT</Text>
+          <Text style={styles.title}>Daily Dinner Management</Text>
           <Icon
             name="restaurant"
             size={p(22)}
-            color="#fff"
+            color="#3660f9"
             style={{ marginLeft: p(10) }}
           />
         </View>
@@ -315,8 +315,11 @@ export default function Dinner() {
     );
   }
 
-  // Show fallback if no data is available
-  if (!data && !error && !todaysSelectedDinnerError) {
+  const errorMessage = typeof error === 'string' ? error : (error?.message || '');
+  const isNoMenuError = errorMessage && (errorMessage.toLowerCase().includes('no menu') || errorMessage.includes('404'));
+
+  // Show fallback if no data is available or if it's the "No menu found" error
+  if (!data || isNoMenuError) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
@@ -324,30 +327,32 @@ export default function Dinner() {
           <Icon
             name="restaurant"
             size={p(22)}
-            color="#fff"
+            color="#3660f9"
             style={{ marginRight: p(10) }}
           />
-          <Text style={styles.title}>DAILY DINNER MANAGEMENT</Text>
+          <Text style={styles.title}>Daily Dinner Management</Text>
           <Icon
             name="restaurant"
             size={p(22)}
-            color="#fff"
+            color="#3660f9"
             style={{ marginLeft: p(10) }}
           />
         </View>
         <ScrollView
           style={styles.scrollView}
+          contentContainerStyle={{ flexGrow: 1 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Today's Menu</Text>
+          <View style={[styles.card, { flex: 1, justifyContent: 'center' }]}>
             <View style={styles.noDataContainer}>
-              <Icon name="restaurant-menu" size={p(40)} color="#ccc" />
-              <Text style={styles.noDataText}>No menu available for today</Text>
+              <View style={styles.iconCircle}>
+                <Icon name="restaurant-menu" size={p(48)} color="#94A3B8" />
+              </View>
+              <Text style={styles.noDataText}>No Menu Available</Text>
               <Text style={styles.noDataSubtext}>
-                Please check back later or contact the admin
+                {isNoMenuError ? error : 'Please check back later or contact HR'}
               </Text>
             </View>
           </View>
@@ -359,54 +364,38 @@ export default function Dinner() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
-      
-      {/* Show only error message if there's an error */}
-      {(error || storeError || todaysSelectedDinnerError) ? (
-        <View style={styles.errorOnlyContainer}>
-          {error && (
-            <View style={styles.errorContainer}>
-              <Icon name="error" size={p(20)} color="#f44336" style={{ marginRight: p(10) }} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
+      <View style={styles.header}>
+        <Icon
+          name="restaurant"
+          size={p(22)}
+          color="#3660f9"
+          style={{ marginRight: p(10) }}
+        />
+        <Text style={styles.title}>Daily Dinner Management</Text>
+        <Icon
+          name="restaurant"
+          size={p(22)}
+          color="#3660f9"
+          style={{ marginLeft: p(10) }}
+        />
+      </View>
 
-          {storeError && (
-            <View style={styles.errorContainer}>
-              <Icon name="error" size={p(20)} color="#f44336" />
-              <Text style={styles.errorText}>{storeError}</Text>
-            </View>
-          )}
-
-          {todaysSelectedDinnerError && (
-            <View style={styles.errorContainer}>
-              <Icon name="error" size={p(20)} color="#f44336" />
-              <Text style={styles.errorText}>{todaysSelectedDinnerError}</Text>
-            </View>
-          )}
+      {/* Show store/selection errors below header but keep UI intact */}
+      {(storeError || todaysSelectedDinnerError || (error && !isNoMenuError)) && (
+        <View style={styles.inlineErrorContainer}>
+          <Icon name="error-outline" size={p(18)} color="#E11D48" />
+          <Text style={styles.inlineErrorText}>
+            {storeError || todaysSelectedDinnerError || error}
+          </Text>
         </View>
-      ) : (
-        <>
-          <View style={styles.header}>
-            <Icon
-              name="restaurant"
-              size={p(22)}
-              color="#fff"
-              style={{ marginRight: p(10) }}
-            />
-            <Text style={styles.title}>DAILY DINNER MANAGEMENT</Text>
-            <Icon
-              name="restaurant"
-              size={p(22)}
-              color="#fff"
-              style={{ marginLeft: p(10) }}
-            />
-          </View>
-          <ScrollView
-            style={styles.scrollView}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
+      )}
+
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Today's Menu</Text>
 
@@ -541,8 +530,6 @@ export default function Dinner() {
               )}
             </View>
           </ScrollView>
-        </>
-      )}
     </SafeAreaView>
   );
 }
@@ -550,65 +537,70 @@ export default function Dinner() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8FAFC',
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    backgroundColor: '#3660f9',
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: p(24),
-    borderBottomLeftRadius: p(30),
-    borderBottomRightRadius: p(30),
+    paddingVertical: p(20),
+    borderBottomLeftRadius: p(24),
+    borderBottomRightRadius: p(24),
     marginBottom: p(20),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   title: {
-    fontFamily: 'Montserrat-SemiBold',
-    color: '#fff',
+    fontFamily: 'Poppins-Bold',
+    color: '#1E293B',
     fontSize: p(16),
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     textAlign: 'center',
   },
   card: {
-    backgroundColor: '#fff',
-    marginHorizontal: p(18),
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: p(16),
     marginBottom: p(40),
-    borderRadius: p(18),
-    padding: p(22),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    borderRadius: p(20),
+    padding: p(24),
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowRadius: 12,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   sectionTitle: {
-    fontFamily: 'Montserrat-SemiBold',
-    fontSize: p(16),
-    color: '#3660f9',
-    marginBottom: p(12),
+    fontFamily: 'Poppins-Bold',
+    fontSize: p(18),
+    color: '#1E293B',
+    marginBottom: p(16),
     textAlign: 'left',
   },
   menuBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#e3f2fd',
-    borderRadius: p(12),
-    padding: p(14),
+    backgroundColor: '#F0F4FF',
+    borderRadius: p(16),
+    padding: p(16),
     marginBottom: p(24),
-    shadowColor: '#90caf9',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#Dbeafe',
   },
   menuText: {
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(15),
-    color: '#222',
+    color: '#334155',
     flex: 1,
-    lineHeight: p(22),
+    lineHeight: p(24),
   },
   optionsRow: {
     flexDirection: 'row',
@@ -620,33 +612,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: p(10),
-    paddingVertical: p(14),
+    borderRadius: p(14),
+    paddingVertical: p(16),
     marginHorizontal: p(6),
-    backgroundColor: '#f5f5f5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   activeVeg: {
-    backgroundColor: '#43a047',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   activeNonVeg: {
-    backgroundColor: '#d84315',
+    backgroundColor: '#F97316',
+    borderColor: '#F97316',
+    shadowColor: '#F97316',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inactive: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
   },
   toggleText: {
     fontFamily: 'Poppins-Bold',
     fontSize: p(15),
     marginLeft: p(8),
-    color: '#666',
+    color: '#64748B',
   },
   activeText: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
   loadingCard: {
     flexDirection: 'column',
@@ -654,7 +655,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(16),
     color: '#3660f9',
     marginTop: p(20),
@@ -664,29 +665,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: p(20),
     borderWidth: 1,
-    borderColor: '#f44336',
-    borderRadius: p(15),
-    backgroundColor: '#fff',
-    shadowColor: '#f44336',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    borderColor: '#FECDD3',
+    borderRadius: p(16),
+    backgroundColor: '#FFF1F2',
     maxWidth: '90%',
   },
   errorText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    color: '#f44336',
+    color: '#E11D48',
     marginHorizontal: p(10),
-    
   },
   timeContainer: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: p(10),
+    backgroundColor: '#F8FAFC',
+    borderRadius: p(12),
     padding: p(12),
     marginBottom: p(16),
     flexDirection: 'column',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   timeRow: {
     flexDirection: 'row',
@@ -694,9 +691,9 @@ const styles = StyleSheet.create({
     marginBottom: p(4),
   },
   timeText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    color: '#666',
+    color: '#475569',
     marginLeft: p(8),
   },
   deadlineRow: {
@@ -704,72 +701,104 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deadlineText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    color: '#666',
+    color: '#475569',
     marginLeft: p(8),
   },
   deadlineWarning: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff3e0',
-    padding: p(12),
+    backgroundColor: '#FFF7ED',
+    padding: p(16),
     borderWidth: 1,
-    borderColor: '#ff9800',
-    borderRadius: p(10),
+    borderColor: '#FFEDD5',
+    borderRadius: p(16),
     marginTop: p(20),
   },
   deadlineWarningText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    color: '#ff9800',
-    marginLeft: p(8),
+    color: '#C2410C',
+    marginLeft: p(10),
     flex: 1,
+    lineHeight: p(20),
   },
   disabledButton: {
-    opacity: 0.6,
-    backgroundColor: '#e0e0e0',
+    opacity: 0.5,
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
   },
   noSelectionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e3f2fd',
-    padding: p(12),
+    backgroundColor: '#F0F9FF',
+    padding: p(16),
     borderWidth: 1,
-    borderColor: '#2196f3',
-    borderRadius: p(10),
+    borderColor: '#E0F2FE',
+    borderRadius: p(16),
     marginTop: p(20),
   },
   noSelectionText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    color: '#2196f3',
-    marginLeft: p(8),
+    color: '#0369A1',
+    marginLeft: p(10),
     flex: 1,
+    lineHeight: p(20),
   },
   noDataContainer: {
     alignItems: 'center',
-    paddingVertical: p(30),
+    paddingVertical: p(40),
   },
   noDataText: {
-    fontFamily: 'Montserrat-SemiBold',
+    fontFamily: 'Poppins-Bold',
     fontSize: p(18),
-    color: '#333',
-    marginTop: p(15),
+    color: '#1E293B',
+    marginTop: p(16),
   },
   noDataSubtext: {
-    fontFamily: 'Rubik-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: p(14),
-    color: '#666',
-    marginTop: p(5),
+    color: '#64748B',
+    marginTop: p(8),
     textAlign: 'center',
     paddingHorizontal: p(20),
+  },
+  iconCircle: {
+    width: p(96),
+    height: p(96),
+    borderRadius: p(48),
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: p(16),
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  inlineErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF1F2',
+    marginHorizontal: p(16),
+    marginBottom: p(16),
+    padding: p(12),
+    borderRadius: p(12),
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+  },
+  inlineErrorText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: p(13),
+    color: '#E11D48',
+    marginLeft: p(8),
+    flex: 1,
   },
   errorOnlyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: p(20),
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8FAFC',
   },
 });
