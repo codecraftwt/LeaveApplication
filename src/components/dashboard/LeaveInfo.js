@@ -23,24 +23,24 @@ export default function LeaveInfo({ showViewButton = true }) {
       </View>
       <View style={styles.cardsRow}>
         {/* Taken Leaves Card */}
-        <View style={[styles.card, { backgroundColor: '#FF6B6B', borderColor: '#FF6B6B' }]}>
-          <View style={[styles.iconWrap, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
-            <Feather name="calendar" size={p(16)} color="#FFFFFF" />
+        <View style={[styles.card, { backgroundColor: '#ffedd5', borderColor: '#ffedd5' }]}>
+          <View style={[styles.iconWrap, { backgroundColor: '#FFFFFF' }]}>
+            <Feather name="calendar" size={p(16)} color="#F36F21" />
           </View>
           <View style={styles.textWrap}>
-            <Text style={[styles.value, { color: '#FFFFFF' }]}>{taken}</Text>
-            <Text style={[styles.label, { color: 'rgba(255, 255, 255, 0.9)' }]} numberOfLines={1} adjustsFontSizeToFit>Taken Leaves</Text>
+            <Text style={styles.value}>{taken}</Text>
+            <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>Taken Leaves</Text>
           </View>
         </View>
 
         {/* Pending Leaves Card */}
-        <View style={[styles.card, { backgroundColor: '#10B981', borderColor: '#10B981' }]}>
-          <View style={[styles.iconWrap, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
-            <Feather name="clock" size={p(16)} color="#FFFFFF" />
+        <View style={[styles.card, { backgroundColor: '#e0e8ff', borderColor: '#e0e8ff' }]}>
+          <View style={[styles.iconWrap, { backgroundColor: '#FFFFFF' }]}>
+            <Feather name="clock" size={p(16)} color="#3360f9" />
           </View>
           <View style={styles.textWrap}>
-            <Text style={[styles.value, { color: '#FFFFFF' }]}>{pending}</Text>
-            <Text style={[styles.label, { color: 'rgba(255, 255, 255, 0.9)' }]} numberOfLines={1} adjustsFontSizeToFit>Pending Leaves</Text>
+            <Text style={styles.value}>{pending}</Text>
+            <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>Pending Leaves</Text>
           </View>
         </View>
       </View>

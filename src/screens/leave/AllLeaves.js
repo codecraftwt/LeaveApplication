@@ -359,10 +359,10 @@ export default function AllLeaves() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   stickyHeader: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
     paddingTop: p(16),
     paddingBottom: p(12),
     paddingHorizontal: p(16),

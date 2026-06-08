@@ -10,12 +10,12 @@ const Tab = createMaterialTopTabNavigator();
 
 export default function SalarySlip() {
   return (
-    <View style={{flex: 1, backgroundColor: '#F8FAFC'}}>
+    <View style={{flex: 1, backgroundColor: '#eff6ff'}}>
       <View
         style={{
           flex: 1,
           paddingTop: p(16),
-          backgroundColor: '#F8FAFC',
+          backgroundColor: '#eff6ff',
         }}>
         <Tab.Navigator
           screenOptions={{

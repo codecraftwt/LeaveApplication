@@ -12,7 +12,7 @@ export default FoodCourt;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#eff6ff',
     justifyContent: 'center',
     alignItems: 'center',
   },

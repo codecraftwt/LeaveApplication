@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: p(16),
     paddingTop: p(10),
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   headerRow: {
     marginBottom: p(16),

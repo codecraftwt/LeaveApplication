@@ -135,15 +135,8 @@ export default function Splash({ navigation }) {
       {/* Loading Indicator (hide if update modal is showing) */}
       {!showUpdate && (
         <View style={styles.loadingContainer}>
-          <View style={styles.loadingBar}>
-            <Animated.View
-              style={[
-                styles.progressBar,
-                { transform: [{ scaleX: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) }] },
-              ]}
-            />
-          </View>
-          <Text style={styles.loadingText}>Checking for updates...</Text>
+          <ActivityIndicator size="large" color="#FFFFFF" style={{ marginBottom: p(16) }} />
+          <Text style={styles.loadingText}>INITIALIZING...</Text>
         </View>
       )}
 
@@ -242,59 +235,46 @@ const styles = StyleSheet.create({
     width: p(400),
     height: p(400),
     borderRadius: p(200),
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    top: -150,
-    left: -50,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    top: -p(100),
+    left: -p(100),
   },
   circle2: {
     position: 'absolute',
     width: p(500),
     height: p(500),
     borderRadius: p(250),
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    bottom: -250,
-    right: -100,
+    backgroundColor: 'rgba(243, 111, 33, 0.1)',
+    bottom: -p(200),
+    right: -p(150),
   },
   circle3: {
     position: 'absolute',
-    width: p(300),
-    height: p(300),
-    borderRadius: p(150),
-    backgroundColor: 'rgba(254, 140, 6, 0.05)',
-    top: '30%',
-    right: -100,
+    width: p(200),
+    height: p(200),
+    borderRadius: p(100),
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    top: '25%',
+    right: -p(50),
   },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   logo: {
-    width: p(300),
+    width: p(280),
   },
   loadingContainer: {
     position: 'absolute',
-    bottom: p(50),
+    bottom: p(60),
     alignItems: 'center',
     width: '100%',
   },
-  loadingBar: {
-    width: '60%',
-    height: p(6),
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: p(3),
-    overflow: 'hidden',
-    marginBottom: p(12),
-  },
-  progressBar: {
-    height: '100%',
-    width: '100%',
-    backgroundColor: '#fe8c06',
-    borderRadius: p(3),
-  },
   loadingText: {
-    fontSize: p(14),
-    color: 'rgba(255,255,255,0.7)',
-    fontFamily: 'Poppins-Regular',
+    fontSize: p(13),
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: 2,
   },
 });
 

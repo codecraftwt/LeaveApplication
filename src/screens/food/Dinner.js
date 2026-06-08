@@ -537,7 +537,7 @@ export default function Dinner() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   scrollView: {
     flex: 1,
@@ -799,6 +799,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: p(20),
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
 });

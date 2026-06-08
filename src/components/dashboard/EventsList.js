@@ -18,7 +18,7 @@ const iconBgMap = {
   'birthday-cake': '#EDE9FE',
   gift: '#FEF3C7',
   calendar: '#D1FAE5',
-  home: '#DBEAFE',
+  home: '#F8FAFC',
 };
 
 export default function EventsList() {
@@ -37,8 +37,8 @@ export default function EventsList() {
         <View style={styles.listWrapper}>
           {upcomingHolidays.map((holiday, index) => (
             <View key={index} style={[styles.listItem, index !== upcomingHolidays.length - 1 && styles.borderBottom]}>
-              <View style={[styles.listIconWrap, { backgroundColor: '#DBEAFE' }]}>
-                <Feather name="calendar" size={p(14)} color="#3B82F6" />
+              <View style={[styles.listIconWrap, { backgroundColor: '#EEF2FF' }]}>
+                <Feather name="calendar" size={p(14)} color="#3660f9" />
               </View>
               <View style={styles.listContent}>
                 <Text style={styles.listTitle}>{holiday.event_name}</Text>

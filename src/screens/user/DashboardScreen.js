@@ -129,7 +129,7 @@ export default DashboardScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Sleek ultra-light slate background
+    backgroundColor: '#eff6ff', // Sleek ultra-light bluish background
   },
   scrollContent: {
     paddingBottom: p(40),

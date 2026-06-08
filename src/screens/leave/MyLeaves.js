@@ -155,7 +155,7 @@ export default MyLeaves;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   headerSection: {
     flexDirection: 'row',

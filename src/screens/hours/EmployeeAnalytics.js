@@ -315,7 +315,7 @@ export default function EmployeeAnalytics() {
 const styles = StyleSheet.create({
   main: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   sub: {
     flex: 1,

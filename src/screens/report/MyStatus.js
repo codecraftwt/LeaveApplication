@@ -184,7 +184,7 @@ const MyStatus = () => {
       <TouchableOpacity
         style={[
           styles.tableRow,
-          { backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }
+          { backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#E2E8F0' }
         ]}
         onPress={() => setSelectedEmployee(item)}
         activeOpacity={0.7}
@@ -469,11 +469,11 @@ export default MyStatus;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   main: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   TopContainer: {
     flexDirection: 'row',

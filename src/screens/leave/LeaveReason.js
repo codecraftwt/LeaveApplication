@@ -118,7 +118,7 @@ export default function LeaveReason() {
       </View>
       
       <ScrollView
-        style={{ backgroundColor: '#F8FAFC' }}
+        style={{ backgroundColor: '#eff6ff' }}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >

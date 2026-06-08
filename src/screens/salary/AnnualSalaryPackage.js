@@ -945,7 +945,7 @@ const AnnualSalaryPackage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
     padding: p(16),
   },
   card: {

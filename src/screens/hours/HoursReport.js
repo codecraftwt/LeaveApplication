@@ -651,7 +651,7 @@ export default function HoursReport() {
 const styles = StyleSheet.create({
   main: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   sub: {
     flex: 1,
@@ -782,9 +782,11 @@ const styles = StyleSheet.create({
   officeView: {
     paddingHorizontal: p(16),
     paddingVertical: p(14),
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderColor: '#E2E8F0',
+    borderTopLeftRadius: p(16),
+    borderTopRightRadius: p(16),
   },
   officeTitle: {
     fontFamily: 'Poppins-Bold',
@@ -831,7 +833,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   loadingText: {
     marginTop: p(10),
@@ -843,7 +845,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#eff6ff',
   },
   errorText: {
     fontSize: p(16),
