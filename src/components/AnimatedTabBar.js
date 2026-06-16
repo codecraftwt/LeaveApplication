@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated, Text } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabAnimation } from '../navigation/TabAnimationContext';
 
 const TAB_ICONS = {
   Dashboard: 'home',
@@ -67,7 +68,17 @@ const TabItem = ({ route, index, state, navigation }) => {
     outputRange: [10, 16],
   });
 
+  const { directionRef, prevIndexRef } = useTabAnimation();
+
   const onPress = () => {
+    // Determine slide direction before navigating
+    if (index > prevIndexRef.current) {
+      directionRef.current = 'right'; // tapped a tab to the right
+    } else if (index < prevIndexRef.current) {
+      directionRef.current = 'left';  // tapped a tab to the left
+    }
+    prevIndexRef.current = index;
+
     const event = navigation.emit({
       type: 'tabPress',
       target: route.key,

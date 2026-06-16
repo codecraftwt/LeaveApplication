@@ -112,8 +112,8 @@ const f = StyleSheet.create({
 
 // ─── Main Screen ───────────────────────────────────────────────────────────
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('rajvardhandp@walstartechnologies.com');
-  const [password, setPassword] = useState('87718771');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -301,8 +301,8 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.07)',
     top: p(20), left: p(20),
   },
-  logo: { 
-    width: p(260), 
+  logo: {
+    width: p(260),
     height: p(120),
     marginTop: p(60),
   },

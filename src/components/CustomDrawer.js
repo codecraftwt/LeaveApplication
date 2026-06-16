@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,11 @@ import {
   Alert,
   Modal,
   TouchableWithoutFeedback,
+  Animated,
+  Dimensions,
 } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { p } from '../utils/Responsive';
 import Feather from 'react-native-vector-icons/Feather';
@@ -124,24 +128,16 @@ export default function CustomDrawer(props) {
     setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const renderIcon = (icon, iconType = 'Feather') => {
-    if (iconType === 'FontAwesome5') {
-      return (
-        <FontAwesome5
-          name={icon}
-          size={p(20)}
-          color="#3360f9"
-          style={styles.menuIcon}
-        />
-      );
-    }
+  const renderIcon = (icon, iconType = 'Feather', iconBg = '#EEF2FF') => {
+    const iconEl = iconType === 'FontAwesome5' ? (
+      <FontAwesome5 name={icon} size={p(18)} color="#3660f9" />
+    ) : (
+      <Feather name={icon} size={p(18)} color="#3660f9" />
+    );
     return (
-      <Feather
-        name={icon}
-        size={p(22)}
-        color="#3360f9"
-        style={styles.menuIcon}
-      />
+      <View style={[styles.menuIconBg, { backgroundColor: iconBg }]}>
+        {iconEl}
+      </View>
     );
   };
 
@@ -155,24 +151,45 @@ export default function CustomDrawer(props) {
     props.navigation.replace('Login');
   };
 
+  // ── Header entrance animation ───────────────────────────────────────────
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const avatarScale = useRef(new Animated.Value(0.85)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(headerFade, { toValue: 1, duration: 450, useNativeDriver: true }),
+      Animated.spring(avatarScale, { toValue: 1, tension: 70, friction: 8, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const displayName =
+    userDetails?.name ||
+    `${userDetails?.first_name || ''} ${userDetails?.last_name || ''}`.trim() ||
+    'User';
+  const displayRole = userDetails?.user_role?.name || userDetails?.role || 'Employee';
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Image
-            source={require('../assets/logow.png')}
-            style={styles.avatar}
-            resizeMode="contain"
-          />
+      {/* ── Clean Modern Header ── */}
+      <Animated.View style={[styles.header, { opacity: headerFade }]}>
+        {/* Avatar */}
+        <Animated.View style={[styles.avatarWrapper, { transform: [{ scale: avatarScale }] }]}>
+          <View style={styles.avatarRing}>
+            <Image
+              source={require('../assets/logow.png')}
+              style={styles.avatar}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.activeBadge} />
+        </Animated.View>
+
+        <Text style={styles.name}>{displayName}</Text>
+
+        <View style={styles.rolePill}>
+          <Text style={styles.roleText}>{displayRole}</Text>
         </View>
-        <Text style={styles.name}>
-          {userDetails?.name ||
-            `${userDetails?.first_name || ''} ${userDetails?.last_name || ''}`}
-        </Text>
-        <Text style={styles.role}>
-          {userDetails?.user_role?.name || userDetails?.role || ''}
-        </Text>
-      </View>
+      </Animated.View>
       <DrawerContentScrollView
         {...props}
         contentContainerStyle={{ flexGrow: 1, paddingTop: 10 }}
@@ -186,15 +203,19 @@ export default function CustomDrawer(props) {
                   <TouchableOpacity
                     style={styles.menuItem}
                     onPress={() => handleExpand(item.label)}
+                    activeOpacity={0.75}
                   >
-                    {renderIcon(item.icon)}
-                    <Text style={styles.menuLabel}>{item.label}</Text>
-                    <Feather
-                      name={isOpen ? 'chevron-up' : 'chevron-down'}
-                      size={p(18)}
-                      color="#64748B"
-                      style={{ marginLeft: 'auto' }}
-                    />
+                    <View style={styles.menuItemLeft}>
+                      {renderIcon(item.icon, 'Feather', '#EEF2FF')}
+                      <Text style={styles.menuLabel}>{item.label}</Text>
+                    </View>
+                    <Animated.View
+                      style={{
+                        transform: [{ rotate: isOpen ? '180deg' : '0deg' }],
+                      }}
+                    >
+                      <Feather name="chevron-down" size={p(16)} color="#94A3B8" />
+                    </Animated.View>
                   </TouchableOpacity>
                   {isOpen && (
                     <View style={styles.subMenuSection}>
@@ -203,8 +224,10 @@ export default function CustomDrawer(props) {
                           key={child.label}
                           style={styles.subMenuItem}
                           onPress={() => navigation.navigate(child.screen, child.params)}
+                          activeOpacity={0.7}
                         >
-                          {renderIcon(child.icon, child.iconType)}
+                          <View style={styles.subMenuDot} />
+                          {renderIcon(child.icon, child.iconType, '#F0F9FF')}
                           <Text style={styles.subMenuLabel}>{child.label}</Text>
                         </TouchableOpacity>
                       ))}
@@ -218,17 +241,23 @@ export default function CustomDrawer(props) {
                 key={item.label}
                 style={styles.menuItem}
                 onPress={() => navigation.navigate(item.screen, item.params)}
+                activeOpacity={0.75}
               >
-                {renderIcon(item.icon)}
-                <Text style={styles.menuLabel}>{item.label}</Text>
+                <View style={styles.menuItemLeft}>
+                  {renderIcon(item.icon, 'Feather', '#EEF2FF')}
+                  <Text style={styles.menuLabel}>{item.label}</Text>
+                </View>
+                <Feather name="chevron-right" size={p(16)} color="#CBD5E1" />
               </TouchableOpacity>
             );
           })}
         </View>
       </DrawerContentScrollView>
-      <TouchableOpacity style={styles.logoutContainer} onPress={confirmLogout}>
-        <Feather name="log-out" size={p(22)} color="red" />
-        <Text style={styles.logoutText}>Logout</Text>
+      <TouchableOpacity style={styles.logoutContainer} onPress={confirmLogout} activeOpacity={0.85}>
+        <View style={styles.logoutIconWrap}>
+          <Feather name="log-out" size={p(18)} color="#E11D48" />
+        </View>
+        <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
 
       {/* Custom Logout Modal */}
@@ -276,69 +305,118 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
+
+  // ── Header ──
   header: {
     backgroundColor: '#3660f9',
     alignItems: 'center',
-    paddingTop: p(50),
-    paddingBottom: p(30),
-    borderBottomLeftRadius: p(30),
-    borderBottomRightRadius: p(30),
+    paddingTop: p(44),
+    paddingBottom: p(26),
+    paddingHorizontal: p(20),
+    borderBottomLeftRadius: p(28),
+    borderBottomRightRadius: p(28),
     shadowColor: '#3660f9',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
-    marginBottom: p(5),
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+    marginBottom: p(6),
   },
-  avatarContainer: {
+
+  // Avatar
+  avatarWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: p(14),
+  },
+  avatarRing: {
+    width: p(82),
+    height: p(82),
+    borderRadius: p(41),
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.5)',
     backgroundColor: '#FFFFFF',
-    borderRadius: p(50),
-    padding: p(4),
-    marginBottom: p(12),
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.18,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 8,
   },
   avatar: {
-    width: p(76),
-    height: p(76),
-    borderRadius: p(38),
-    backgroundColor: '#FFFFFF',
+    width: p(70),
+    height: p(70),
+    borderRadius: p(35),
+    backgroundColor: '#F1F5F9',
   },
+  activeBadge: {
+    position: 'absolute',
+    bottom: p(3),
+    right: p(3),
+    width: p(13),
+    height: p(13),
+    borderRadius: p(7),
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+    borderColor: '#3660f9',
+  },
+
+  // Name & role
   name: {
     color: '#FFFFFF',
     fontFamily: 'Poppins-Bold',
     fontSize: p(18),
-    marginBottom: p(2),
     textAlign: 'center',
-    letterSpacing: 0.5,
+    marginBottom: p(8),
+    letterSpacing: 0.2,
   },
-  role: {
-    color: '#E0E7FF',
+  rolePill: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: p(20),
+    paddingHorizontal: p(16),
+    paddingVertical: p(5),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+  },
+  roleText: {
+    color: 'rgba(255,255,255,0.9)',
     fontFamily: 'Poppins-Medium',
-    fontSize: p(14),
-    textAlign: 'center',
+    fontSize: p(12),
   },
   menuSection: {
-    paddingHorizontal: p(16),
+    paddingHorizontal: p(14),
+    paddingTop: p(4),
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: p(14),
-    paddingHorizontal: p(16),
-    marginBottom: p(14),
+    justifyContent: 'space-between',
+    paddingVertical: p(12),
+    paddingHorizontal: p(14),
+    marginBottom: p(10),
     backgroundColor: '#FFFFFF',
-    borderRadius: p(12),
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: p(16),
+    shadowColor: '#1a2980',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#EEF2FF',
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  menuIconBg: {
+    width: p(38),
+    height: p(38),
+    borderRadius: p(11),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: p(12),
   },
   menuIcon: {
     marginRight: p(14),
@@ -347,57 +425,71 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     fontSize: p(14),
     color: '#1E293B',
+    flex: 1,
   },
   subMenuSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: p(12),
-    marginTop: p(-8),
-    marginBottom: p(14),
-    paddingLeft: p(16),
-    paddingVertical: p(8),
+    backgroundColor: '#F8FAFF',
+    borderRadius: p(14),
+    marginTop: p(-4),
+    marginBottom: p(10),
+    marginHorizontal: p(4),
+    paddingVertical: p(6),
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: '#E8EDFF',
   },
   subMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: p(12),
-    paddingHorizontal: p(16),
-    borderRadius: p(8),
+    paddingVertical: p(10),
+    paddingHorizontal: p(14),
+    borderRadius: p(10),
+  },
+  subMenuDot: {
+    width: p(5),
+    height: p(5),
+    borderRadius: p(3),
+    backgroundColor: '#93C5FD',
+    marginRight: p(8),
   },
   subMenuLabel: {
     fontFamily: 'Poppins-Medium',
-    fontSize: p(14),
+    fontSize: p(13),
     color: '#475569',
-    marginLeft: p(12),
+    marginLeft: p(8),
+    flex: 1,
   },
   logoutContainer: {
-    margin: p(16),
-    padding: p(16),
-    backgroundColor: '#FFF1F2',
+    marginHorizontal: p(16),
+    marginBottom: p(30),
+    marginTop: p(4),
     borderRadius: p(16),
-    borderWidth: 1,
-    borderColor: '#FFE4E6',
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: p(30),
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FFE4E6',
+    paddingVertical: p(14),
     shadowColor: '#E11D48',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+    gap: p(10),
+  },
+  logoutIconWrap: {
+    width: p(34),
+    height: p(34),
+    borderRadius: p(10),
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoutText: {
     color: '#E11D48',
     fontFamily: 'Poppins-Bold',
-    fontSize: p(16),
-    marginLeft: p(10),
+    fontSize: p(15),
   },
   modalOverlay: {
     flex: 1,

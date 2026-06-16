@@ -6,6 +6,8 @@ import { Image, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import AnimatedTabBar from '../components/AnimatedTabBar';
+import SlideScreen from '../components/SlideScreen';
+import { TabAnimationProvider } from './TabAnimationContext';
 import SplashScreen from '../screens/auth/SplashScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import DashboardScreen from '../screens/user/DashboardScreen';
@@ -26,6 +28,13 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import AnnualSleep from '../screens/salary/AnnualSleep';
 import MonthlySleep from '../screens/salary/MonthlySleep';
 
+// ── Slide-wrapped tab screens ─────────────────────────────────────────────────
+const DashboardTab       = () => <SlideScreen><DashboardScreen /></SlideScreen>;
+const MyLeavesTab        = () => <SlideScreen><MyLeaves /></SlideScreen>;
+const AnalyticsTab       = () => <SlideScreen><EmployeeAnalytics /></SlideScreen>;
+const DinnerTab          = () => <SlideScreen><Dinner /></SlideScreen>;
+const ProfileTab         = () => <SlideScreen><ProfileScreen /></SlideScreen>;
+
 console.log('DEBUG APPNAVIGATOR IMPORTS:');
 console.log('createBottomTabNavigator:', createBottomTabNavigator);
 console.log('Feather:', Feather);
@@ -43,77 +52,79 @@ const TabRoutes = ({ navigation }) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <Tab.Navigator
-      tabBar={(props) => <AnimatedTabBar {...props} />}
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: '#3660f9',
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        headerTintColor: '#FFFFFF',
-        headerTitleAlign: 'left',
-        headerTitleStyle: { fontFamily: 'Poppins-Bold', fontSize: 20 },
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.toggleDrawer()} style={{ marginLeft: 16 }}>
-            <Feather name="menu" size={24} color="#fff" />
-          </TouchableOpacity>
-        ),
-        headerRight: () => (
-          <Image
-            source={require('../assets/walstar11.png')}
-            style={{ width: 90, height: 80, marginRight: 16 }}
-            resizeMode="contain"
-          />
-        ),
-      }}
-    >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Feather name="home" color={color} size={22} />,
-          headerTitle: 'Dashboard'
+    <TabAnimationProvider>
+      <Tab.Navigator
+        tabBar={(props) => <AnimatedTabBar {...props} />}
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#3660f9',
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: '#FFFFFF',
+          headerTitleAlign: 'left',
+          headerTitleStyle: { fontFamily: 'Poppins-Bold', fontSize: 20 },
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.toggleDrawer()} style={{ marginLeft: 16 }}>
+              <Feather name="menu" size={24} color="#fff" />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <Image
+              source={require('../assets/walstar11.png')}
+              style={{ width: 90, height: 80, marginRight: 16 }}
+              resizeMode="contain"
+            />
+          ),
         }}
-      />
-      <Tab.Screen
-        name="My Leaves"
-        component={MyLeaves}
-        options={{
-          tabBarLabel: 'Leaves',
-          tabBarIcon: ({ color }) => <Feather name="calendar" color={color} size={22} />,
-          headerTitle: 'My Leaves'
-        }}
-      />
-      <Tab.Screen
-        name="Employee Analytics"
-        component={EmployeeAnalytics}
-        options={{
-          tabBarLabel: 'Analytics',
-          tabBarIcon: ({ color }) => <Feather name="bar-chart-2" color={color} size={22} />,
-          headerTitle: 'Employee Analytics'
-        }}
-      />
-      <Tab.Screen
-        name="Dinner"
-        component={Dinner}
-        options={{
-          tabBarLabel: 'Food',
-          tabBarIcon: ({ color }) => <Feather name="coffee" color={color} size={22} />,
-          headerTitle: 'Food Court'
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => <Feather name="user" color={color} size={22} />,
-          headerTitle: 'My Profile'
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen
+          name="Dashboard"
+          component={DashboardTab}
+          options={{
+            tabBarLabel: 'Home',
+            tabBarIcon: ({ color }) => <Feather name="home" color={color} size={22} />,
+            headerTitle: 'Dashboard'
+          }}
+        />
+        <Tab.Screen
+          name="My Leaves"
+          component={MyLeavesTab}
+          options={{
+            tabBarLabel: 'Leaves',
+            tabBarIcon: ({ color }) => <Feather name="calendar" color={color} size={22} />,
+            headerTitle: 'My Leaves'
+          }}
+        />
+        <Tab.Screen
+          name="Employee Analytics"
+          component={AnalyticsTab}
+          options={{
+            tabBarLabel: 'Analytics',
+            tabBarIcon: ({ color }) => <Feather name="bar-chart-2" color={color} size={22} />,
+            headerTitle: 'Employee Analytics'
+          }}
+        />
+        <Tab.Screen
+          name="Dinner"
+          component={DinnerTab}
+          options={{
+            tabBarLabel: 'Food',
+            tabBarIcon: ({ color }) => <Feather name="coffee" color={color} size={22} />,
+            headerTitle: 'Food Court'
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileTab}
+          options={{
+            tabBarLabel: 'Profile',
+            tabBarIcon: ({ color }) => <Feather name="user" color={color} size={22} />,
+            headerTitle: 'My Profile'
+          }}
+        />
+      </Tab.Navigator>
+    </TabAnimationProvider>
   );
 };
 
