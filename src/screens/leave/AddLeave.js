@@ -165,7 +165,9 @@ export default function AddLeave({ navigation }) {
 
   // Handle date selection
   const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(Platform.OS === 'ios');
+    if (Platform.OS === 'android' || event.type === 'set') {
+      setShowDatePicker(false);
+    }
 
     if (selectedDate) {
       if (dateField === 'from') {
@@ -337,8 +339,9 @@ export default function AddLeave({ navigation }) {
                 new Date()
               }
               mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
               onChange={handleDateChange}
+              themeVariant="light"
             />
           )}
 

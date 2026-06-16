@@ -16,6 +16,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDispatch, useSelector } from 'react-redux';
@@ -32,6 +33,7 @@ import { getOfficeList } from '../../redux/slices/officelistSlice';
 import { useToast } from 'react-native-toast-notifications';
 
 const ListStatus = () => {
+  const insets = useSafeAreaInsets();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [fromDate, setFromDate] = useState(
     moment().subtract(15, 'days').format('DD-MM-YYYY'),
@@ -404,10 +406,11 @@ const ListStatus = () => {
                 <DateTimePicker
                   value={tempDate}
                   mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
                   onChange={handleDateChange}
                   maximumDate={dateField === 'from' && toDate ? convertDateFormat(toDate) : undefined}
                   minimumDate={dateField === 'to' && fromDate ? convertDateFormat(fromDate) : undefined}
+                  themeVariant="light"
                 />
               )}
 
@@ -452,16 +455,18 @@ const ListStatus = () => {
           onRequestClose={() => setSelectedEmployee(null)}
           statusBarTranslucent={true}
         >
-          <SafeAreaView style={styles.detailsModalContainer}>
+          <View style={styles.detailsModalContainer}>
             <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
-            <View style={styles.detailsModalHeader}>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedEmployee(null)}>
-                <Feather name="arrow-left" size={p(22)} color="#3660f9" />
-              </TouchableOpacity>
-              <Text style={styles.modalHeaderText}>Work Status</Text>
+            <View style={{ backgroundColor: '#3660f9', paddingTop: insets.top }}>
+              <View style={styles.detailsModalHeader}>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedEmployee(null)}>
+                  <Feather name="arrow-left" size={p(22)} color="#3660f9" />
+                </TouchableOpacity>
+                <Text style={styles.modalHeaderText}>Work Status</Text>
+              </View>
             </View>
 
-            <ScrollView style={styles.modalScrollView} contentContainerStyle={{ paddingBottom: p(40) }}>
+            <ScrollView style={styles.modalScrollView} contentContainerStyle={{ paddingBottom: insets.bottom + p(40) }}>
               {selectedEmployee && (() => {
                 const modalStatusStr = selectedEmployee.status?.toString().trim();
                 const modalStatusColor = getStatusColorBetter(modalStatusStr);
@@ -581,7 +586,7 @@ const ListStatus = () => {
                 );
               })()}
             </ScrollView>
-          </SafeAreaView>
+          </View>
         </Modal>
 
         {/* Reject Modal */}
@@ -898,13 +903,12 @@ const styles = StyleSheet.create({
   // Details Modal
   detailsModalContainer: {
     flex: 1,
-    backgroundColor: '#3660f9',
+    backgroundColor: '#F8FAFC',
   },
   detailsModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? p(40) : p(45),
-    paddingBottom: p(16),
+    paddingVertical: p(14),
     paddingHorizontal: p(16),
     backgroundColor: '#3660f9',
   },

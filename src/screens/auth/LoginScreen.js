@@ -218,12 +218,12 @@ const LoginScreen = ({ navigation }) => {
             />
 
             {/* Forgot */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={s.forgotRow}
               onPress={() => navigation.navigate('ForgotPassword')}
               activeOpacity={0.7}>
               <Text style={s.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {/* Error */}
             {displayError ? (

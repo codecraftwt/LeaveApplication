@@ -9,13 +9,13 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  SafeAreaView,
   Platform,
   Image,
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { p } from '../../utils/Responsive';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -25,6 +25,7 @@ export default function LeaveReason() {
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
+  const insets = useSafeAreaInsets();
 
   const { 
     approveLeaveLoading, 
@@ -105,10 +106,10 @@ export default function LeaveReason() {
   const statusStyle = getStatusStyles(status);
 
   return (
-    <SafeAreaView style={styles.mainContainer}>
+    <View style={styles.mainContainer}>
       <StatusBar backgroundColor="#3660f9" barStyle="light-content" />
       
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Feather name="arrow-left" size={p(22)} color="#3660f9" />
@@ -119,7 +120,7 @@ export default function LeaveReason() {
       
       <ScrollView
         style={{ backgroundColor: '#eff6ff' }}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: p(40) + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
@@ -284,14 +285,14 @@ export default function LeaveReason() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#3660f9',
+    backgroundColor: '#eff6ff',
   },
   headerContainer: {
     backgroundColor: '#3660f9',
