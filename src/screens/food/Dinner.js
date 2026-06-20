@@ -46,6 +46,7 @@ export default function Dinner() {
   });
   const [isPastDeadline, setIsPastDeadline] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(null);
 
   // Clear errors when component mounts
   useEffect(() => {
@@ -189,9 +190,9 @@ export default function Dinner() {
     let newVeg, newNonVeg;
 
     if (data?.mealType === 'both') {
-      // For both options, toggle veg and clear non-veg if veg was selected
+      // For both options, toggle veg and ensure non-veg is false
       newVeg = !veg;
-      newNonVeg = veg ? false : nonVeg;
+      newNonVeg = false;
     } else if (data?.mealType === 'veg') {
       // For veg only, toggle veg and ensure non-veg is false
       newVeg = !veg;
@@ -203,6 +204,7 @@ export default function Dinner() {
     }
 
     try {
+      setLoadingAction('veg');
       const result = await dispatch(
         storeDinnerCount({
           selection: { veg: newVeg, non_veg: newNonVeg },
@@ -222,6 +224,8 @@ export default function Dinner() {
         type: 'danger',
         placement: 'bottom',
       });
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -238,9 +242,9 @@ export default function Dinner() {
     let newVeg, newNonVeg;
 
     if (data?.mealType === 'both') {
-      // For both options, toggle non-veg and clear veg if non-veg was selected
+      // For both options, toggle non-veg and ensure veg is false
       newNonVeg = !nonVeg;
-      newVeg = nonVeg ? false : veg;
+      newVeg = false;
     } else if (data?.mealType === 'non_veg') {
       // For non-veg only, toggle non-veg and ensure veg is false
       newNonVeg = !nonVeg;
@@ -252,6 +256,7 @@ export default function Dinner() {
     }
 
     try {
+      setLoadingAction('nonVeg');
       const result = await dispatch(
         storeDinnerCount({
           selection: { veg: newVeg, non_veg: newNonVeg },
@@ -271,6 +276,8 @@ export default function Dinner() {
         type: 'danger',
         placement: 'bottom',
       });
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -445,7 +452,7 @@ export default function Dinner() {
                     activeOpacity={0.8}
                     disabled={storeLoading || isPastDeadline}
                   >
-                    {storeLoading ? (
+                    {storeLoading && loadingAction === 'veg' ? (
                       <ActivityIndicator
                         size="small"
                         color={veg ? '#fff' : '#43a047'}
@@ -481,7 +488,7 @@ export default function Dinner() {
                     activeOpacity={0.8}
                     disabled={storeLoading || isPastDeadline}
                   >
-                    {storeLoading ? (
+                    {storeLoading && loadingAction === 'nonVeg' ? (
                       <ActivityIndicator
                         size="small"
                         color={nonVeg ? '#fff' : '#d84315'}

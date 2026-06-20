@@ -19,8 +19,8 @@ android {
         applicationId "com.leaveapplication"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 17
-        versionName "1.1"
+        versionCode 19
+        versionName "1.3"
     }
 
     signingConfigs {
@@ -51,7 +51,15 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+
+    packagingOptions {
+        jniLibs {
+            // Required for 16 KB page size support on Android 15+ devices
+            useLegacyPackaging false
+        }
+    }
 }
+
 
 dependencies {
     implementation("com.facebook.react:react-android")
@@ -91,4 +99,4 @@ afterEvaluate {
         dependsOn("copyReactNativeVectorIconFonts")
     }
 }
-
+

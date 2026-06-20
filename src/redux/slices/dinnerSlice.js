@@ -15,7 +15,7 @@ export const getTodayMenu = createAsyncThunk(
       if (data.meal_type === '1') {
         mealType = 'veg';
       } else if (data.meal_type === '2') {
-        mealType = 'non_veg';
+        mealType = 'both';
       } else if (data.meal_type === '1,2' || data.meal_type === '2,1') {
         mealType = 'both';
       } else {
